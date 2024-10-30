@@ -1,0 +1,13 @@
+GET HTTP://localhost:3001/
+
+
+###分隔線
+POST HTTP://localhost:3001/try-post
+Content-Type: application/x-www-form-urlencoded
+
+
+###分隔線
+POST HTTP://localhost:3001/try-post
+Content-Type: application/json
+
+{"c": 123, "name": "小明"}
