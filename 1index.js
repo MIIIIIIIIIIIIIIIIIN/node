@@ -80,6 +80,11 @@ app.use((req, res, next) => {
 // 路由定義, callback 為路由處理器
 // 路由的兩個條件: 1. HTTP method; 2. 路徑
 
+app.get("/fakedata", (req, res)=>{
+  
+})
+
+
 //FINAL
 //首頁
 app.get("/", (req, res) => {

@@ -7,9 +7,17 @@ dotenv.config();
 
 const app = express();
 
+
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI;
+
+//fake data
+const artists = ["周杰倫", "蔡依林", "五月天", "林俊傑", "孫燕姿", "張惠妹", "王力宏", "楊丞琳", "范瑋琪", "S.H.E"];
+const albums = [];
+
+
+
 
 app.get("/home", (req, res) => {
   res.send("授權成功，已經可以使用Spotify API!");
