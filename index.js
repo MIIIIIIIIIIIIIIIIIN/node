@@ -49,7 +49,8 @@ app.get("/callback", async (req, res) => {
     );
 
     const access_token = response.data.access_token;
-    res.redirect(`http://localhost/George/spotifyapi?access_token=${access_token}`);
+    const refresh_token = response.data.refresh_token;
+    res.redirect(`http://localhost:3000/George/products-detail?access_token=${access_token}`);
   } catch (error) {
     console.error(error);
     res.send("Error retrieving access token");
