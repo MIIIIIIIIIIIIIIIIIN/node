@@ -149,7 +149,7 @@ app.get("/try-sess", (req, res) => {
 });
 
 app.get("/try-db", async (req, res) => {
-  const sql = "SELECT * FROM address_book ORDER BY ab_id DESC LIMIT 3, 6"; //從第4筆開始取6筆資料
+  const sql = "SELECT * FROM m_member WHERE m_member_id = 1"; //從第4筆開始取6筆資料
   const [rows, field] = await db.query(sql);
   // fields: 會拿到欄位相關的資訊, 通常不會用到
   res.json({ rows, field });
