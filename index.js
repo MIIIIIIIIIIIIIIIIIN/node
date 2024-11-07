@@ -19,6 +19,12 @@ import cors from "cors";
 //引入token
 import jwt from "jsonwebtoken";
 
+import forumRouter from "./routes/forum.js";
+
+import dotenv from "dotenv";
+
+dotenv.config();
+
 //建立 web server 物件
 const app = express();
 
@@ -139,7 +145,6 @@ app.get("/my-params1/:action?/:id?", (req, res) => {
 
 //4.6
 app.use("/admins", admin2Router);
-
 
 //session 顯示頁面刷新次數
 app.get("/try-sess", (req, res) => {
@@ -323,6 +328,9 @@ app.get("/jwt-data", (req, res) => {
   res.json(req.my_jwt);
 });
 
+//論壇用
+app.use("/api/forum", forumRouter);
+
 // ********** 靜態內容資料夾 **************************
 app.use(express.static("public"));
 app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
@@ -331,7 +339,16 @@ app.use((req, res) => {
   res.status(404).send("<h1>走錯路了</h1>");
   // res.status(404).json({ msg: "走錯路了" });
 });
-const port = process.env.WEB_PORT || 3002;
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    status: "error",
+    message: "Something broke!",
+  });
+});
+const port = process.env.WEB_PORT || 3005;
 app.listen(port, () => {
   console.log(`Server 啟動於 ${port}`);
 });
