@@ -347,7 +347,7 @@ app.use((req, res) => {
   res.status(404).send("<h1>走錯路了</h1>");
   // res.status(404).json({ msg: "走錯路了" });
 });
-const port = process.env.WEB_PORT || 3002;
+const port = process.env.WEB_PORT || 3005;
 app.listen(port, () => {
   console.log(`Server 啟動於 ${port}`);
 });

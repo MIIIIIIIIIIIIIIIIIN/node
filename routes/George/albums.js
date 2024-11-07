@@ -3,7 +3,7 @@ import db from '../../utils/connect-mysqls.js';
 
 const router = express.Router();
 
-// 從albums table 撈資料 ((取出來要放去哪-.-?idk 笑死
+// 從albums table 撈資料
 router.get("/albums", async (req, res) => {
   const sql = "SELECT * FROM pp_albums ORDER BY p_albums_id DESC";
   //  LIMIT 3, 6"; //從第4筆開始取6筆資料
@@ -12,6 +12,18 @@ router.get("/albums", async (req, res) => {
   res.json({ rows, field });
 });
 
+// 取出專輯images
+router.get("/albums/:albumsId", async (req, res)=>{
+  const { albumsId } = req.params;
+  try{
+const sql = `SELECT p_productsimg_filename from p_productsimg_filename where p_products_id ${a}`
+  }catch (error){
+    console.error(error);
+    res.json({success: false, message: "無法取得圖片"})
+    
+  }
+  
+})
 
 
 //FINAL Spotify
