@@ -9,6 +9,7 @@ import moment from "moment-timezone";
 import upload from "./utils/upload-imgs.js";
 //引入路由群組
 import admin2Router from "./routes/admin2.js";
+import albumsRouter from "./routes/George/albums.js"
 
 //引入資料庫
 import db from "./utils/connect-mysqls.js";
@@ -19,8 +20,21 @@ import cors from "cors";
 //引入token
 import jwt from "jsonwebtoken";
 
+
+//spotify
+import dotenv from 'dotenv';
+import axios from 'axios';
+import querystring from 'querystring';
+
+dotenv.config();
+
 //建立 web server 物件
 const app = express();
+
+//spotify
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const REDIRECT_URI = process.env.REDIRECT_URI;
 
 //註冊樣板引擎
 app.set("view engine", "ejs");
@@ -139,7 +153,7 @@ app.get("/my-params1/:action?/:id?", (req, res) => {
 
 //4.6
 app.use("/admins", admin2Router);
-
+app.use("/api",albumsRouter);
 
 //session 顯示頁面刷新次數
 app.get("/try-sess", (req, res) => {
@@ -323,6 +337,8 @@ app.get("/jwt-data", (req, res) => {
   res.json(req.my_jwt);
 });
 
+
+
 // ********** 靜態內容資料夾 **************************
 app.use(express.static("public"));
 app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
@@ -331,7 +347,7 @@ app.use((req, res) => {
   res.status(404).send("<h1>走錯路了</h1>");
   // res.status(404).json({ msg: "走錯路了" });
 });
-const port = process.env.WEB_PORT || 3002;
+const port = process.env.WEB_PORT || 3005;
 app.listen(port, () => {
   console.log(`Server 啟動於 ${port}`);
 });
