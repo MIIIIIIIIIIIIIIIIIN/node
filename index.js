@@ -23,7 +23,13 @@ import forumRouter from "./routes/forum.js";
 //讀取 .env
 import dotenv from "dotenv";
 
+import { fileURLToPath } from "url";
+import path from "path";
+
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 //建立 web server 物件
 const app = express();
@@ -334,6 +340,15 @@ app.use("/api/forum", forumRouter);
 // ********** 靜態內容資料夾 **************************
 app.use(express.static("public"));
 app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
+app.use(
+  "/member-images",
+  express.static(path.join(__dirname, "public/member-images"))
+);
+app.use(
+  "/project-images",
+  express.static(path.join(__dirname, "public/project-images"))
+);
+
 // ******* 404 頁面要在所有的路由後面 **************************
 app.use((req, res) => {
   res.status(404).send("<h1>走錯路了</h1>");

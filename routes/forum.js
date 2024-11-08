@@ -28,14 +28,12 @@ pool
 // GET - Get all forum posts with user and project details
 router.get("/posts", async function (req, res) {
   try {
-    console.log("Received request for posts"); // Debug log
+    console.log("Received request for posts");
 
     // Basic pagination
     const page = Number(req.query.page) || 1;
     const perpage = Number(req.query.perpage) || 10;
     const offset = (page - 1) * perpage;
-
-    console.log(`Fetching page ${page} with ${perpage} items per page`); // Debug log
 
     // SQL query joining all necessary tables
     const [rows] = await pool.query(
@@ -52,8 +50,6 @@ router.get("/posts", async function (req, res) {
       [perpage, offset]
     );
 
-    console.log(`Found ${rows.length} posts`); // Debug log
-
     // Get total count for pagination
     const [countRows] = await pool.query(
       "SELECT COUNT(*) as count FROM f_message"
@@ -67,14 +63,14 @@ router.get("/posts", async function (req, res) {
         posts: rows.map((post) => ({
           id: post.f_message_id,
           userImage: post.userImage
-            ? `/member-images/${post.userImage}`
-            : "/default-avatar.jpg",
-          username: post.username,
-          title: post.f_message_title,
-          content: post.f_message_content,
+            ? `/member-images/${post.userImage}` // This will be served from public/member-images/
+            : "/public/default-avatar.jpg",
+          username: post.username || "Anonymous",
+          title: post.f_message_title || "Untitled",
+          content: post.f_message_content || "",
           coverImage: post.coverImage
-            ? `/project-images/${post.coverImage}`
-            : "/default-project.jpg",
+            ? `/project-images/${post.coverImage}` // This will be served from public/img/
+            : "/public/default-project.jpg",
           timeStamp: post.f_message_current,
           likes: 0,
           reposts: 0,
@@ -91,7 +87,7 @@ router.get("/posts", async function (req, res) {
     console.error("Error fetching forum posts:", error);
     return res.status(500).json({
       status: "error",
-      message: error.message || "Internal server error",
+      message: "Failed to fetch posts: " + error.message,
     });
   }
 });
