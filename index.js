@@ -18,9 +18,9 @@ import bcrypt from "bcrypt";
 import cors from "cors";
 //引入token
 import jwt from "jsonwebtoken";
-
+//論壇
 import forumRouter from "./routes/forum.js";
-
+//讀取 .env
 import dotenv from "dotenv";
 
 dotenv.config();
