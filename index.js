@@ -165,10 +165,7 @@ app.get("/my-params1/:action?/:id?", (req, res) => {
 
 //4.6
 app.use("/admins", admin2Router);
-<<<<<<< HEAD
 app.use("/api",albumsRouter);
-=======
->>>>>>> origin/Allen
 
 //session 顯示頁面刷新次數
 app.get("/try-sess", (req, res) => {
@@ -352,12 +349,8 @@ app.get("/jwt-data", (req, res) => {
   res.json(req.my_jwt);
 });
 
-<<<<<<< HEAD
-
-=======
 //論壇用
 app.use("/api/forum", forumRouter);
->>>>>>> origin/Allen
 
 // ********** 靜態內容資料夾 **************************
 app.use(express.static("public"));
@@ -376,8 +369,6 @@ app.use((req, res) => {
   res.status(404).send("<h1>走錯路了</h1>");
   // res.status(404).json({ msg: "走錯路了" });
 });
-<<<<<<< HEAD
-=======
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -387,7 +378,6 @@ app.use((err, req, res, next) => {
     message: "Something broke!",
   });
 });
->>>>>>> origin/Allen
 const port = process.env.WEB_PORT || 3005;
 app.listen(port, () => {
   console.log(`Server 啟動於 ${port}`);
