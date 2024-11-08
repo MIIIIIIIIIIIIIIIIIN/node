@@ -1,5 +1,5 @@
 import mysql from "mysql2/promise";
-const { DB_HOST, DB_USER, DB_PASS, DB_NAME } = process.env;
+const { DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT } = process.env;
 // console.log({ DB_HOST, DB_USER, DB_PASS, DB_NAME });
 const db = mysql.createPool({
   host: DB_HOST,
@@ -9,5 +9,6 @@ const db = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 5,
   queueLimit: 0,
+  port: DB_PORT,
 });
 export default db;
