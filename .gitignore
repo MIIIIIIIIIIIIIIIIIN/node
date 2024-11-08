@@ -2,3 +2,5 @@
 
 
 
+# Ignore dev.env file
+dev.env
