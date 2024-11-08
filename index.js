@@ -9,7 +9,6 @@ import moment from "moment-timezone";
 import upload from "./utils/upload-imgs.js";
 //引入路由群組
 import admin2Router from "./routes/admin2.js";
-import albumsRouter from "./routes/George/albums.js"
 
 //引入資料庫
 import db from "./utils/connect-mysqls.js";
@@ -83,6 +82,7 @@ app.use((req, res, next) => {
 
 //FINAL
 //首頁
+app.use('/fundraiser',fundraiserRouter)
 app.get("/", (req, res) => {
   res.locals.title = "首頁 - " + res.locals.title;
   res.locals.pageName = "home";
@@ -163,7 +163,14 @@ app.get("/try-sess", (req, res) => {
 });
 
 app.get("/try-db", async (req, res) => {
-  const sql = "SELECT * FROM address_book ORDER BY ab_id DESC LIMIT 3, 6"; //從第4筆開始取6筆資料
+  const sql = "SELECT * FROM f_project_list WHERE f_project_id=1"; //從第4筆開始取6筆資料
+  const [rows, field] = await db.query(sql);
+  // fields: 會拿到欄位相關的資訊, 通常不會用到
+  res.json({ rows, field });
+});
+
+app.get("/fuc-list", async (req, res) => {
+  const sql = "SELECT * FROM f_project_list ORDER BY f_project_id LIMIT 0, 5;"; //從第4筆開始取6筆資料
   const [rows, field] = await db.query(sql);
   // fields: 會拿到欄位相關的資訊, 通常不會用到
   res.json({ rows, field });
