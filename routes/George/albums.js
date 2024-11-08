@@ -1,27 +1,31 @@
 import express from "express";
-import db from '../../utils/connect-mysqls.js';
+import db from "../../utils/connect-mysqls.js";
+import axios from "axios";
+import querystring from "querystring";
+
 const router = express.Router();
 
 // 從albums table 撈資料
 router.get("/albums", async (req, res) => {
   const sql = "SELECT * FROM pp_albums ORDER BY p_albums_id DESC";
   //  LIMIT 3, 6"; //從第4筆開始取6筆資料
-  const [rows, field] = await db.query(sql);
+  const [rows] = await db.query(sql);
   // fields: 會拿到欄位相關的資訊, 通常不會用到
-  res.json({ rows, field });
+  res.json({ rows });
 });
 
 // 取出專輯images
-router.get("/albums/:albumsId", async (req, res)=>{
+router.get("/albums/:albumsId", async (req, res) => {
   const { albumsId } = req.params;
-  try{
-const sql = `SELECT p_productsimg_filename from p_productsimg_filename where p_products_id ${a}`
-  }catch (error){
+  try {
+    const sql = `SELECT p_productsimg_filename from pp_products_img where p_products_id = ?`;
+    const [imgRows] = await db.query(sql, [albumsId]);
+    res.json({images: imgRows}) // 傳到客戶端去嚕~
+  } catch (error) {
     console.error(error);
-    res.json({success: false, message: "無法取得圖片"})
+    res.json({ success: false, message: "無法取得圖片" });
   }
-})
-
+});
 
 //FINAL Spotify
 router.get("/home", (req, res) => {
