@@ -10,6 +10,7 @@ import upload from "./utils/upload-imgs.js";
 //引入路由群組
 import admin2Router from "./routes/admin2.js";
 import member from "./routes/member.js";
+import fundraiserRouter from "./routes/fundraiser.js";
 
 //引入資料庫
 import db from "./utils/connect-mysqls.js";
@@ -64,7 +65,7 @@ app.use((req, res, next) => {
   next();
 });
 
-
+app.use('/fundraiser',fundraiserRouter)
 app.use("/members", member);
 //*********************************路由 *********************************/
 // 路由定義, callback 為路由處理器
