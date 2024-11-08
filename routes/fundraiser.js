@@ -27,16 +27,41 @@ router.get("/plane/:project", async (req, res) => {
     });
   }
 });
+router.get("/question/:project", async (req, res) => {
+  const projectId = req.params.project;
+const sql =`SELECT * FROM f_question WHERE f_project_id=${projectId}`;
+const [rows, field] = await db.query(sql);
+// fields: 會拿到欄位相關的資訊, 通常不會用到
+res.json({ rows, field });
+});
+router.get("/news/:project", async (req, res) => {
+  const projectId = req.params.project;
+const sql =`SELECT * FROM f_news WHERE f_project_id=${projectId}`;
+const [rows, field] = await db.query(sql);
+// fields: 會拿到欄位相關的資訊, 通常不會用到
+res.json({ rows, field });
+});
+
+
+
+
+router.get("/list", async (req, res) => {
+const sql =`SELECT * FROM f_project_list `;
+const [rows, field] = await db.query(sql);
+// fields: 會拿到欄位相關的資訊, 通常不會用到
+res.json({ rows, field });
+});
 router.get("/list/:project", async (req, res) => {
     const projectId = req.params.project;
-  const sql =`SELECT * FROM f_project_list WHERE f_project_id=${projectId}`; //從第4筆開始取6筆資料
+  const sql =`SELECT * FROM f_project_list WHERE f_project_id=${projectId}`;
   const [rows, field] = await db.query(sql);
   // fields: 會拿到欄位相關的資訊, 通常不會用到
   res.json({ rows, field });
 });
+
 router.get("/kv/:project", async (req, res) => {
   const projectId = req.params.project;
-const sql =`SELECT * FROM f_picture WHERE f_project_id=${projectId}`; //從第4筆開始取6筆資料
+const sql =`SELECT * FROM f_picture WHERE f_project_id=${projectId}`; 
 const [rows, field] = await db.query(sql);
 // fields: 會拿到欄位相關的資訊, 通常不會用到
 res.json({ rows, field });
@@ -53,8 +78,9 @@ router.get("/projectsRecommend", async (req, res) => {
   // fields: 會拿到欄位相關的資訊, 通常不會用到
   res.json({ rows, field });
 });
-router.get("/message", async (req, res) => {
-  const sql = "SELECT * FROM f_message WHERE f_project_id=1"; //從第4筆開始取6筆資料
+router.get("/message/:project", async (req, res) => {
+  const projectId = req.params.project;
+  const sql = `SELECT * FROM f_message WHERE f_project_id=${projectId}`; 
   const [rows, field] = await db.query(sql);
   // fields: 會拿到欄位相關的資訊, 通常不會用到
   res.json({ rows, field });
