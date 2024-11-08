@@ -18,6 +18,18 @@ import bcrypt from "bcrypt";
 import cors from "cors";
 //引入token
 import jwt from "jsonwebtoken";
+//論壇
+import forumRouter from "./routes/forum.js";
+//讀取 .env
+import dotenv from "dotenv";
+
+import { fileURLToPath } from "url";
+import path from "path";
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 
 //spotify
@@ -153,7 +165,10 @@ app.get("/my-params1/:action?/:id?", (req, res) => {
 
 //4.6
 app.use("/admins", admin2Router);
+<<<<<<< HEAD
 app.use("/api",albumsRouter);
+=======
+>>>>>>> origin/Allen
 
 //session 顯示頁面刷新次數
 app.get("/try-sess", (req, res) => {
@@ -163,14 +178,7 @@ app.get("/try-sess", (req, res) => {
 });
 
 app.get("/try-db", async (req, res) => {
-  const sql = "SELECT * FROM f_project_list WHERE f_project_id=1"; //從第4筆開始取6筆資料
-  const [rows, field] = await db.query(sql);
-  // fields: 會拿到欄位相關的資訊, 通常不會用到
-  res.json({ rows, field });
-});
-
-app.get("/fuc-list", async (req, res) => {
-  const sql = "SELECT * FROM f_project_list ORDER BY f_project_id LIMIT 0, 5;"; //從第4筆開始取6筆資料
+  const sql = "SELECT * FROM m_member WHERE m_member_id = 1"; //從第4筆開始取6筆資料
   const [rows, field] = await db.query(sql);
   // fields: 會拿到欄位相關的資訊, 通常不會用到
   res.json({ rows, field });
@@ -344,16 +352,42 @@ app.get("/jwt-data", (req, res) => {
   res.json(req.my_jwt);
 });
 
+<<<<<<< HEAD
 
+=======
+//論壇用
+app.use("/api/forum", forumRouter);
+>>>>>>> origin/Allen
 
 // ********** 靜態內容資料夾 **************************
 app.use(express.static("public"));
 app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
+app.use(
+  "/member-images",
+  express.static(path.join(__dirname, "public/member-images"))
+);
+app.use(
+  "/project-images",
+  express.static(path.join(__dirname, "public/project-images"))
+);
+
 // ******* 404 頁面要在所有的路由後面 **************************
 app.use((req, res) => {
   res.status(404).send("<h1>走錯路了</h1>");
   // res.status(404).json({ msg: "走錯路了" });
 });
+<<<<<<< HEAD
+=======
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    status: "error",
+    message: "Something broke!",
+  });
+});
+>>>>>>> origin/Allen
 const port = process.env.WEB_PORT || 3005;
 app.listen(port, () => {
   console.log(`Server 啟動於 ${port}`);
