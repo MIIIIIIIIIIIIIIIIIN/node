@@ -1,6 +1,5 @@
 import express from "express";
 import db from '../../utils/connect-mysqls.js';
-
 const router = express.Router();
 
 // 從albums table 撈資料
@@ -20,9 +19,7 @@ const sql = `SELECT p_productsimg_filename from p_productsimg_filename where p_p
   }catch (error){
     console.error(error);
     res.json({success: false, message: "無法取得圖片"})
-    
   }
-  
 })
 
 
