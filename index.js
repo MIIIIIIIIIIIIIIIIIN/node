@@ -9,6 +9,7 @@ import moment from "moment-timezone";
 import upload from "./utils/upload-imgs.js";
 //引入路由群組
 import admin2Router from "./routes/admin2.js";
+import member from "./routes/member.js";
 
 //引入資料庫
 import db from "./utils/connect-mysqls.js";
@@ -18,34 +19,9 @@ import bcrypt from "bcrypt";
 import cors from "cors";
 //引入token
 import jwt from "jsonwebtoken";
-//論壇
-import forumRouter from "./routes/forum.js";
-//讀取 .env
-import dotenv from "dotenv";
-
-import { fileURLToPath } from "url";
-import path from "path";
-
-dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-
-//spotify
-import dotenv from 'dotenv';
-import axios from 'axios';
-import querystring from 'querystring';
-
-dotenv.config();
 
 //建立 web server 物件
 const app = express();
-
-//spotify
-const CLIENT_ID = process.env.CLIENT_ID;
-const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const REDIRECT_URI = process.env.REDIRECT_URI;
 
 //註冊樣板引擎
 app.set("view engine", "ejs");
@@ -88,13 +64,14 @@ app.use((req, res, next) => {
   next();
 });
 
+
+app.use("/members", member);
 //*********************************路由 *********************************/
 // 路由定義, callback 為路由處理器
 // 路由的兩個條件: 1. HTTP method; 2. 路徑
 
 //FINAL
 //首頁
-app.use('/fundraiser',fundraiserRouter)
 app.get("/", (req, res) => {
   res.locals.title = "首頁 - " + res.locals.title;
   res.locals.pageName = "home";
@@ -165,20 +142,21 @@ app.get("/my-params1/:action?/:id?", (req, res) => {
 
 //4.6
 app.use("/admins", admin2Router);
-app.use("/api",albumsRouter);
+
 
 //session 顯示頁面刷新次數
-app.get("/try-sess", (req, res) => {
+app.get("/mem-data", (req, res) => {
   req.session.my_num ||= 0;
   req.session.my_num++;
   res.json(req.session);
 });
 
-app.get("/try-db", async (req, res) => {
-  const sql = "SELECT * FROM m_member WHERE m_member_id = 1"; //從第4筆開始取6筆資料
+app.get("/test", async (req, res) => {
+  const sql = "SELECT * FROM m_member WHERE m_member_id BETWEEN 1 and 20 "; //從第4筆開始取6筆資料
   const [rows, field] = await db.query(sql);
   // fields: 會拿到欄位相關的資訊, 通常不會用到
   res.json({ rows, field });
+
 });
 
 app.get("/try-moment", (req, res) => {
@@ -220,47 +198,126 @@ app.get("/login", (req, res) => {
   res.render("login");
 });
 
+// 登入 暫時註解 11.07 (資料存在localStorage)
+// app.post("/login", upload.none(), async (req, res) => {
+//   const output = {
+//     success: false,
+//     code: 0,
+//     error: "",
+//     bodyData: req.body, // 傳給用戶端, 存到 localStorage
+//   };
+//   let { email, password } = req.body;
+//   email = email ? email.trim() : "";
+//   password = password ? password.trim() : "";
+
+//   console.log(email, password);
+  
+//   // 0. 兩者若有一個沒有值就結束
+//   if (!email || !password) {
+//     return res.json(output);
+//   }
+//   // 1. 先確定帳號是不是對的
+//   const sql = `SELECT * FROM m_member WHERE m_account=?`;
+//   const [rows] = await db.query(sql, [email]);
+//   if (!rows.length) {
+//     // 帳號是錯的
+//     output.code = 400; //錯誤代碼自行設定
+//     output.error = "帳號或密碼錯誤";
+//     return res.json(output);
+//   }
+//   const row = rows[0];
+//   // 2. 確定密碼是不是對的
+//   const result = await password === row.m_password
+//   console.log('password',result);
+  
+//   // const result = await bcrypt.compare(password, row.password_hash);
+//   if (!result) {
+//     // 密碼是錯的
+//     output.code = 450;
+//     output.error = "帳號或密碼錯誤";
+//     return res.json(output);
+//   }
+
+//   // 前端的output資料
+//   output.bodyData = {
+//     id: row.m_member_id,
+//     account: row.m_account,
+//     nickname: row.m_nickname,
+//   }
+
+//   // 帳密是對的, 要儲存登入的狀態到 session
+//   req.session.admin = {
+//     id: row.m_member_id,
+//     account: row.m_account,
+//     nickname: row.m_nickname,
+
+//   };
+//   output.success = true;
+//   console.log('output',output);
+  
+//   res.json(output);
+// });
+
+
+// 登入 暫時新增 11.07 (資料從localStorage改存到session)
 app.post("/login", upload.none(), async (req, res) => {
   const output = {
     success: false,
     code: 0,
     error: "",
-    bodyData: req.body,
   };
   let { email, password } = req.body;
   email = email ? email.trim() : "";
   password = password ? password.trim() : "";
-  // 0. 兩者若有一個沒有值就結束
+
   if (!email || !password) {
     return res.json(output);
   }
   // 1. 先確定帳號是不是對的
-  const sql = `SELECT * FROM members WHERE email=?`;
+  const sql = `SELECT * FROM m_member WHERE m_account=?`;
   const [rows] = await db.query(sql, [email]);
   if (!rows.length) {
-    // 帳號是錯的
-    output.code = 400; //錯誤代碼自行設定
+    output.code = 400;
     output.error = "帳號或密碼錯誤";
     return res.json(output);
   }
   const row = rows[0];
-  // 2. 確定密碼是不是對的
+  const isPasswordCorrect = password === row.m_password;
 
-  const result = await bcrypt.compare(password, row.password_hash);
-  if (!result) {
-    // 密碼是錯的
+  if (!isPasswordCorrect) {
     output.code = 450;
     output.error = "帳號或密碼錯誤";
     return res.json(output);
   }
-  // 帳密是對的, 要儲存登入的狀態到 session
+
+  // 將登入成功的會員資料儲存到 session
   req.session.admin = {
-    id: row.member_id,
-    email,
-    nickname: row.nickname,
+    id: row.m_member_id,
+    account: row.m_account,
+    nickname: row.m_nickname,
+    email: row.m_email,
+    birth: row.m_birth,
+    gender: row.m_gender,
+    location: row.m_location,
+    phone: row.m_phone,
+    icon: row.m_icon,
   };
   output.success = true;
   res.json(output);
+});
+
+app.get("/api/check-login", (req, res) => {
+  if (req.session.admin) {
+    res.json({
+      loggedIn: true,
+      memberInfo: req.session.admin,
+    });
+  } else {
+    res.json({
+      loggedIn: false,
+      message: "尚未登入",
+    });
+  }
 });
 //登出
 app.get("/logout", (req, res) => {
@@ -349,36 +406,16 @@ app.get("/jwt-data", (req, res) => {
   res.json(req.my_jwt);
 });
 
-//論壇用
-app.use("/api/forum", forumRouter);
 
 // ********** 靜態內容資料夾 **************************
 app.use(express.static("public"));
 app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
-app.use(
-  "/member-images",
-  express.static(path.join(__dirname, "public/member-images"))
-);
-app.use(
-  "/project-images",
-  express.static(path.join(__dirname, "public/project-images"))
-);
-
 // ******* 404 頁面要在所有的路由後面 **************************
 app.use((req, res) => {
   res.status(404).send("<h1>走錯路了</h1>");
   // res.status(404).json({ msg: "走錯路了" });
 });
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    status: "error",
-    message: "Something broke!",
-  });
-});
-const port = process.env.WEB_PORT || 3005;
+const port = process.env.WEB_PORT || 3002;
 app.listen(port, () => {
   console.log(`Server 啟動於 ${port}`);
 });
