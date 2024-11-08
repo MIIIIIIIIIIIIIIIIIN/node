@@ -2,7 +2,7 @@ import express from 'express'
 const router = express.Router()
 
 // 資料庫使用，使用原本的mysql2 + sql
-import db from '../utils/connect-mysqls.js'
+import memDB from './mem-db.js';
 
 // import jsonwebtoken from 'jsonwebtoken'
 // 中介軟體，存取隱私會員資料用

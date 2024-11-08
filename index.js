@@ -9,10 +9,11 @@ import moment from "moment-timezone";
 import upload from "./utils/upload-imgs.js";
 //引入路由群組
 import admin2Router from "./routes/admin2.js";
-import member from "./routes/member.js";
+import member from "./routes/member/member.js";
 
 //引入資料庫
-import db from "./utils/connect-mysqls.js";
+// import db from "./utils/connect-mysqls.js";
+import memDB from "./routes/member/mem-db.js";
 //引入雜湊工具
 import bcrypt from "bcrypt";
 //引入cors
@@ -275,7 +276,7 @@ app.post("/login", upload.none(), async (req, res) => {
   }
   // 1. 先確定帳號是不是對的
   const sql = `SELECT * FROM m_member WHERE m_account=?`;
-  const [rows] = await db.query(sql, [email]);
+  const [rows] = await memDB.query(sql, [email]);
   if (!rows.length) {
     output.code = 400;
     output.error = "帳號或密碼錯誤";
