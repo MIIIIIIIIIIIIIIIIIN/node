@@ -72,6 +72,58 @@ app.use("/members", member);
 // 路由的兩個條件: 1. HTTP method; 2. 路徑
 
 //FINAL
+
+// 註冊表單路由 11.09 建立
+app.get("/auth/register", (req, res) => {
+  res.render("register"); // 渲染註冊表單頁面
+});
+
+// 註冊處理路由
+app.post("/auth/register", upload.none(), async (req, res) => {
+  const { account, password } = req.body;
+  const output = {
+    success: false,
+    code: 0,
+    error: "",
+  };
+
+  if (!account || !password) {
+    output.error = "帳號和密碼皆為必填";
+    return res.json(output);
+  }
+
+  try {
+    // 1. 檢查帳號是否已存在
+    const checkSql = "SELECT * FROM m_member WHERE m_account = ?";
+    const [existingUser] = await memDB.query(checkSql, [account]);
+    if (existingUser.length > 0) {
+      output.error = "帳號已被使用";
+      output.code = 409; // 錯誤代碼，表示衝突
+      return res.json(output);
+    }
+
+    // 2. 雜湊密碼
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // 3. 新增會員資料到資料庫
+    const insertSql = "INSERT INTO m_member (m_account, m_password) VALUES (?, ?)";
+    const [result] = await memDB.query(insertSql, [account, hashedPassword]);
+
+    if (result.affectedRows === 1) {
+      output.success = true;
+      output.message = "註冊成功";
+    } else {
+      output.error = "註冊失敗，請稍後再試";
+    }
+
+    res.json(output);
+  } catch (error) {
+    console.error("註冊錯誤：", error);
+    output.error = "系統錯誤，請稍後再試";
+    res.json(output);
+  }
+});
+
 //首頁
 app.get("/", (req, res) => {
   res.locals.title = "首頁 - " + res.locals.title;
