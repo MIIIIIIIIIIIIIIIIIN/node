@@ -10,6 +10,8 @@ import upload from "./utils/upload-imgs.js";
 //引入路由群組
 import admin2Router from "./routes/admin2.js";
 import member from "./routes/member.js";
+// import spotifyRouter from "./routes/George/albums.js";
+import albumsRouter from "./routes/George/albums.js";
 
 //引入資料庫
 import db from "./utils/connect-mysqls.js";
@@ -63,7 +65,6 @@ app.use((req, res, next) => {
 
   next();
 });
-
 
 app.use("/members", member);
 //*********************************路由 *********************************/
@@ -143,7 +144,6 @@ app.get("/my-params1/:action?/:id?", (req, res) => {
 //4.6
 app.use("/admins", admin2Router);
 
-
 //session 顯示頁面刷新次數
 app.get("/mem-data", (req, res) => {
   req.session.my_num ||= 0;
@@ -156,7 +156,6 @@ app.get("/test", async (req, res) => {
   const [rows, field] = await db.query(sql);
   // fields: 會拿到欄位相關的資訊, 通常不會用到
   res.json({ rows, field });
-
 });
 
 app.get("/try-moment", (req, res) => {
@@ -211,7 +210,7 @@ app.get("/login", (req, res) => {
 //   password = password ? password.trim() : "";
 
 //   console.log(email, password);
-  
+
 //   // 0. 兩者若有一個沒有值就結束
 //   if (!email || !password) {
 //     return res.json(output);
@@ -229,7 +228,7 @@ app.get("/login", (req, res) => {
 //   // 2. 確定密碼是不是對的
 //   const result = await password === row.m_password
 //   console.log('password',result);
-  
+
 //   // const result = await bcrypt.compare(password, row.password_hash);
 //   if (!result) {
 //     // 密碼是錯的
@@ -254,10 +253,9 @@ app.get("/login", (req, res) => {
 //   };
 //   output.success = true;
 //   console.log('output',output);
-  
+
 //   res.json(output);
 // });
-
 
 // 登入 暫時新增 11.07 (資料從localStorage改存到session)
 app.post("/login", upload.none(), async (req, res) => {
@@ -406,6 +404,9 @@ app.get("/jwt-data", (req, res) => {
   res.json(req.my_jwt);
 });
 
+//商城
+// app.use("/albums", spotifyRouter)
+app.use("/api",albumsRouter);
 
 // ********** 靜態內容資料夾 **************************
 app.use(express.static("public"));
@@ -415,7 +416,7 @@ app.use((req, res) => {
   res.status(404).send("<h1>走錯路了</h1>");
   // res.status(404).json({ msg: "走錯路了" });
 });
-const port = process.env.WEB_PORT || 3002;
+const port = process.env.WEB_PORT || 3005;
 app.listen(port, () => {
   console.log(`Server 啟動於 ${port}`);
 });
