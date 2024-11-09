@@ -51,6 +51,15 @@ const [rows, field] = await db.query(sql);
 // fields: 會拿到欄位相關的資訊, 通常不會用到
 res.json({ rows, field });
 });
+router.get("/plane", async (req, res) => {
+  const sql =`SELECT * FROM f_plan `;
+  const [rows, field] = await db.query(sql);
+  // fields: 會拿到欄位相關的資訊, 通常不會用到
+  res.json({ rows, field });
+  });
+
+
+
 router.get("/list/:project", async (req, res) => {
     const projectId = req.params.project;
   const sql =`SELECT * FROM f_project_list WHERE f_project_id=${projectId}`;
@@ -68,6 +77,12 @@ res.json({ rows, field });
 });
 router.get("/projectsNew", async (req, res) => {
   const sql = "SELECT * FROM f_project_list ORDER BY f_project_current DESC LIMIT 7"; 
+  const [rows, field] = await db.query(sql);
+  // fields: 會拿到欄位相關的資訊, 通常不會用到
+  res.json({ rows, field });
+});
+router.get("/projectsRecommend", async (req, res) => {
+  const sql = "SELECT * FROM f_project_list "; 
   const [rows, field] = await db.query(sql);
   // fields: 會拿到欄位相關的資訊, 通常不會用到
   res.json({ rows, field });
