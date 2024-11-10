@@ -11,7 +11,7 @@ import upload from "./utils/upload-imgs.js";
 import admin2Router from "./routes/admin2.js";
 import memberRouter from "./routes/member/member.js";
 import loginRouter from "./routes/member/login.js"; // 引入新的 login.js
-
+import authRouter from "./routes/member/auth.js";
 
 //引入資料庫
 // import db from "./utils/connect-mysqls.js";
@@ -84,6 +84,11 @@ app.get("/auth/register", (req, res) => {
 app.use("/member", loginRouter); // 使用新的登入路由
 
 // 其他路由及頁面
+
+// 使用註冊路由
+app.use("/member", authRouter); // 使用 /member 作為路徑前端
+
+
 // 註冊處理路由
 app.post("/auth/register", upload.none(), async (req, res) => {
   const { account, password } = req.body;
