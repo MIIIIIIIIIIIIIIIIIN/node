@@ -20,11 +20,38 @@ router.get("/albums/:albumsId", async (req, res) => {
   try {
     const sql = `SELECT p_productsimg_filename from pp_products_img where p_products_id = ?`;
     const [imgRows] = await db.query(sql, [albumsId]);
-    res.json({images: imgRows}) // 傳到客戶端去嚕~
+    res.json({ images: imgRows }); // 傳到客戶端去嚕~
   } catch (error) {
     console.error(error);
     res.json({ success: false, message: "無法取得圖片" });
   }
+});
+
+// genres fetching
+router.get("/getGenres", async (req, res) => {
+  const query = " SELECT * FROM pp_genres";
+  try {
+    const [genresRow] = await db.query(query);
+    res.json(genresRow);
+  } catch (err) {
+    console.error("查詢錯誤", err);
+    return res.status(500).json({ error: "查詢錯誤" });
+  }
+});
+
+// 分類資料收 & 送
+router.post("/postGenres", (req, res) => {
+  const { genres } = req.body;
+  const query =
+    "SELECT p_albums.p_albums_id, p_albums.p_album_title, p_albums.p_album_artist, p_albums.p_album_description, p_albums.p_album_price, p_albums.p_album_releasr_date FROM pp_albums JOIN pp_album_genres ON p_albums.p_albums_id = p_albums_genres.p_albums_id JOIN pp_genres ON p_genres.p_genres_id = p_album_genres.p_genres_id WHERE pp_genres.p_genres_name = ?";
+
+  db.query(query, { genres }, (err, results) => {
+    if (err) {
+      console.error(`Error fetching albums:`, err);
+      return res.status(500).send(`Server error`);
+    }
+    res.json(results); // send it to front-end
+  });
 });
 
 //FINAL Spotify
