@@ -41,6 +41,10 @@ const __dirname = path.dirname(__filename);
 // 建立 web server 物件
 const app = express();
 
+// 將 bcrypt 替換為 bcryptjs
+// const bcrypt = require("bcryptjs");
+
+
 //註冊樣板引擎
 app.set("view engine", "ejs");
 // 設定 top-level middleware
@@ -230,12 +234,12 @@ app.get("/my-params1/:action?/:id?", (req, res) => {
 //4.6
 app.use("/admins", admin2Router);
 
-//session 顯示頁面刷新次數
-// app.get("/mem-data", (req, res) => {
-//   req.session.my_num ||= 0;
-//   req.session.my_num++;
-//   res.json(req.session);
-// });
+// session 顯示頁面刷新次數
+app.get("/mem-data", (req, res) => {
+  req.session.my_num ||= 0;
+  req.session.my_num++;
+  res.json(req.session);
+});
 
 app.get("/test", async (req, res) => {
   const sql = "SELECT * FROM m_member WHERE m_member_id BETWEEN 1 and 20 "; //從第4筆開始取6筆資料
