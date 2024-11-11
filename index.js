@@ -14,6 +14,9 @@ import memberRouter from "./routes/member/member.js";
 import fundraiserRouter from "./routes/fundraiser.js";
 import loginRouter from "./routes/member/login.js"; // 引入新的 login.js
 import authRouter from "./routes/member/auth.js";
+import member from "./routes/member.js";
+// import spotifyRouter from "./routes/George/albums.js";
+import albumsRouter from "./routes/George/albums.js";
 
 //引入資料庫
 // import db from "./utils/connect-mysqls.js";
@@ -53,7 +56,12 @@ app.use(
   })
 );
 
+<<<<<<< HEAD
 // 設置 session 和其他資料
+=======
+
+
+>>>>>>> origin/George
 app.use((req, res, next) => {
   res.locals.title = "光芒萬丈的官方網站";
   res.locals.pageName = "";
@@ -70,11 +78,18 @@ app.use((req, res, next) => {
   next();
 });
 
+<<<<<<< HEAD
 // 設置路由
 app.use("/members", memberRouter);
+=======
+app.use("/members", member);
+>>>>>>> origin/George
 //*********************************路由 *********************************/
 // 路由定義, callback 為路由處理器
 // 路由的兩個條件: 1. HTTP method; 2. 路徑
+
+//商城
+app.use("/api", albumsRouter);
 
 //FINAL
 
@@ -213,20 +228,18 @@ app.get("/my-params1/:action?/:id?", (req, res) => {
 //4.6
 app.use("/admins", admin2Router);
 
-
 //session 顯示頁面刷新次數
-app.get("/mem-data", (req, res) => {
-  req.session.my_num ||= 0;
-  req.session.my_num++;
-  res.json(req.session);
-});
+// app.get("/mem-data", (req, res) => {
+//   req.session.my_num ||= 0;
+//   req.session.my_num++;
+//   res.json(req.session);
+// });
 
 app.get("/test", async (req, res) => {
   const sql = "SELECT * FROM m_member WHERE m_member_id BETWEEN 1 and 20 "; //從第4筆開始取6筆資料
   const [rows, field] = await db.query(sql);
   // fields: 會拿到欄位相關的資訊, 通常不會用到
   res.json({ rows, field });
-
 });
 app.get("/try-moment", (req, res) => {
   const fm = "YYYY-MM-DD HH:mm:ss";
@@ -281,7 +294,7 @@ app.get("/login", (req, res) => {
 //   password = password ? password.trim() : "";
 
 //   console.log(email, password);
-  
+
 //   // 0. 兩者若有一個沒有值就結束
 //   if (!email || !password) {
 //     return res.json(output);
@@ -299,7 +312,7 @@ app.get("/login", (req, res) => {
 //   // 2. 確定密碼是不是對的
 //   const result = await password === row.m_password
 //   console.log('password',result);
-  
+
 //   // const result = await bcrypt.compare(password, row.password_hash);
 //   if (!result) {
 //     // 密碼是錯的
@@ -324,10 +337,9 @@ app.get("/login", (req, res) => {
 //   };
 //   output.success = true;
 //   console.log('output',output);
-  
+
 //   res.json(output);
 // });
-
 
 // 登入 暫時新增 11.07 (資料從localStorage改存到session)
 app.post("/login", upload.none(), async (req, res) => {
@@ -477,6 +489,7 @@ app.get("/jwt-data", (req, res) => {
 });
 
 
+
 // ********** 靜態內容資料夾 **************************
 app.use(express.static("public"));
 app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
@@ -485,8 +498,12 @@ app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
 app.use((req, res) => {
   res.status(404).send("<h1>走錯路了</h1>");
 });
+<<<<<<< HEAD
 
 const port = process.env.WEB_PORT || 3002;
+=======
+const port = process.env.WEB_PORT || 3005;
+>>>>>>> origin/George
 app.listen(port, () => {
   console.log(`Server 啟動於 ${port}`);
 });
