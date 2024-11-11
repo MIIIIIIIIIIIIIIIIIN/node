@@ -14,7 +14,6 @@ import memberRouter from "./routes/member/member.js";
 import fundraiserRouter from "./routes/fundraiser.js";
 import loginRouter from "./routes/member/login.js"; // 引入新的 login.js
 import authRouter from "./routes/member/auth.js";
-import member from "./routes/member.js";
 // import spotifyRouter from "./routes/George/albums.js";
 import albumsRouter from "./routes/George/albums.js";
 
@@ -56,16 +55,8 @@ app.use(
   })
 );
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 // 設置 session 和其他資料
-=======
 
-
->>>>>>> origin/George
-=======
-// 設置 session 和其他資料
->>>>>>> origin/Jade
 app.use((req, res, next) => {
   res.locals.title = "光芒萬丈的官方網站";
   res.locals.pageName = "";
@@ -82,17 +73,10 @@ app.use((req, res, next) => {
   next();
 });
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 // 設置路由
 app.use("/members", memberRouter);
-=======
-app.use("/members", member);
->>>>>>> origin/George
-=======
-// 設置路由
-app.use("/members", memberRouter);
->>>>>>> origin/Jade
+
+
 //*********************************路由 *********************************/
 // 路由定義, callback 為路由處理器
 // 路由的兩個條件: 1. HTTP method; 2. 路徑
@@ -113,10 +97,7 @@ app.use("/member", loginRouter); // 使用新的登入路由
 
 // 使用註冊路由
 app.use("/member", authRouter); // 使用 /member 作為路徑前端
-<<<<<<< HEAD
 app.use('/fundraiser',fundraiserRouter)
-=======
->>>>>>> origin/Jade
 
 
 // 註冊處理路由
@@ -510,15 +491,11 @@ app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
 app.use((req, res) => {
   res.status(404).send("<h1>走錯路了</h1>");
 });
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> origin/Jade
 
-const port = process.env.WEB_PORT || 3002;
-=======
+
+
 const port = process.env.WEB_PORT || 3005;
->>>>>>> origin/George
+
 app.listen(port, () => {
   console.log(`Server 啟動於 ${port}`);
 });

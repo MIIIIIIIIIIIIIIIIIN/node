@@ -2,8 +2,8 @@ import express from "express";
 const router = express.Router();
 
 // 資料庫使用，使用原本的mysql2 + sql
-// import db from "../utils/connect-mysqls.js";
-import memDB from "./member/mem-db";
+import db from "../utils/connect-mysqls.js";
+// import memDB from "./member/mem-db";
 
 // 修改路由路徑，移除 fundraiser-list
 router.get("/plane/:project", async (req, res) => {
