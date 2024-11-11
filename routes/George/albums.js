@@ -1,5 +1,5 @@
 import express from "express";
-// import db from "../../utils/connect-mysqls.js";
+import db from "../../utils/connect-mysqls.js";
 import memDB from "../member/mem-db.js";
 import axios from "axios";
 import querystring from "querystring";
