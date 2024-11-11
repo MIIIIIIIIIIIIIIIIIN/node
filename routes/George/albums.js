@@ -40,18 +40,23 @@ router.get("/getGenres", async (req, res) => {
 });
 
 // 分類資料收 & 送
-router.post("/postGenres", (req, res) => {
+router.post("/postGenres", async (req, res) => {
+  console.log("Received POST request at /postGenres");
   const { genres } = req.body;
-  const query =
-    "SELECT p_albums.p_albums_id, p_albums.p_album_title, p_albums.p_album_artist, p_albums.p_album_description, p_albums.p_album_price, p_albums.p_album_releasr_date FROM pp_albums JOIN pp_album_genres ON p_albums.p_albums_id = p_albums_genres.p_albums_id JOIN pp_genres ON p_genres.p_genres_id = p_album_genres.p_genres_id WHERE pp_genres.p_genres_name = ?";
+  console.log('Received genres:', genres);
 
-  db.query(query, { genres }, (err, results) => {
-    if (err) {
-      console.error(`Error fetching albums:`, err);
-      return res.status(500).send(`Server error`);
-    }
-    res.json(results); // send it to front-end
-  });
+      const query = `
+    SELECT pp_albums.p_albums_id, pp_albums.p_albums_title, pp_albums.p_albums_artist, pp_albums.p_albums_description, pp_albums.p_albums_price, pp_albums.p_albums_release_date FROM pp_albums JOIN pp_album_genres ON pp_albums.p_albums_id = pp_album_genres.p_albums_id JOIN pp_genres ON pp_genres.p_genres_id = pp_album_genres.p_genres_id WHERE pp_genres.p_genres_name = ?;`;
+  
+
+  try {
+    const [postResults] = await db.query(query, [genres]);
+    res.json(postResults);
+  } catch (error) {
+    console.error("Error fetching albums:", error);
+    res.status(500).send("Server error");
+  }
+
 });
 
 //FINAL Spotify

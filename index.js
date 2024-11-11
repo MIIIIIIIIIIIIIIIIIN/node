@@ -50,6 +50,8 @@ app.use(
   })
 );
 
+
+
 app.use((req, res, next) => {
   res.locals.title = "光芒萬丈的官方網站";
   res.locals.pageName = "";
@@ -70,6 +72,9 @@ app.use("/members", member);
 //*********************************路由 *********************************/
 // 路由定義, callback 為路由處理器
 // 路由的兩個條件: 1. HTTP method; 2. 路徑
+
+//商城
+app.use("/api", albumsRouter);
 
 //FINAL
 //首頁
@@ -145,11 +150,11 @@ app.get("/my-params1/:action?/:id?", (req, res) => {
 app.use("/admins", admin2Router);
 
 //session 顯示頁面刷新次數
-app.get("/mem-data", (req, res) => {
-  req.session.my_num ||= 0;
-  req.session.my_num++;
-  res.json(req.session);
-});
+// app.get("/mem-data", (req, res) => {
+//   req.session.my_num ||= 0;
+//   req.session.my_num++;
+//   res.json(req.session);
+// });
 
 app.get("/test", async (req, res) => {
   const sql = "SELECT * FROM m_member WHERE m_member_id BETWEEN 1 and 20 "; //從第4筆開始取6筆資料
@@ -404,9 +409,7 @@ app.get("/jwt-data", (req, res) => {
   res.json(req.my_jwt);
 });
 
-//商城
-// app.use("/albums", spotifyRouter)
-app.use("/api",albumsRouter);
+
 
 // ********** 靜態內容資料夾 **************************
 app.use(express.static("public"));
