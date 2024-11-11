@@ -18,7 +18,7 @@ import authRouter from "./routes/member/auth.js";
 import albumsRouter from "./routes/George/albums.js";
 
 //引入資料庫
-// import db from "./utils/connect-mysqls.js";
+import db from "./utils/connect-mysqls.js";
 import memDB from "./routes/member/mem-db.js";
 //引入雜湊工具
 import bcrypt from "bcrypt";
