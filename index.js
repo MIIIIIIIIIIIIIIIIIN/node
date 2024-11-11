@@ -9,11 +9,15 @@ import moment from "moment-timezone";
 import upload from "./utils/upload-imgs.js";
 //引入路由群組
 import admin2Router from "./routes/admin2.js";
-import member from "./routes/member.js";
+import memberRouter from "./routes/member/member.js";
+
 import fundraiserRouter from "./routes/fundraiser.js";
+import loginRouter from "./routes/member/login.js"; // 引入新的 login.js
+import authRouter from "./routes/member/auth.js";
 
 //引入資料庫
-import db from "./utils/connect-mysqls.js";
+// import db from "./utils/connect-mysqls.js";
+import memDB from "./routes/member/mem-db.js";
 //引入雜湊工具
 import bcrypt from "bcrypt";
 //引入cors
@@ -21,13 +25,13 @@ import cors from "cors";
 //引入token
 import jwt from "jsonwebtoken";
 
-//建立 web server 物件
+// 建立 web server 物件
 const app = express();
+
 
 //註冊樣板引擎
 app.set("view engine", "ejs");
-
-//top-level middleware
+// 設定 top-level middleware
 const corsOptions = {
   credentials: true,
   origin: (origin, callback) => {
@@ -42,17 +46,18 @@ app.use(
     saveUninitialized: false,
     resave: false,
     secret: "kdhhkffhifaoi",
-    // cookie: {
+        // cookie: {
     //   maxAge: 1200_000, //session 存活時間 (20分鐘)
     //   httpOnly: false,
     // },
   })
 );
 
+// 設置 session 和其他資料
 app.use((req, res, next) => {
   res.locals.title = "光芒萬丈的官方網站";
   res.locals.pageName = "";
-  res.locals.session = req.session; //讓ejs可以使用session
+  res.locals.session = req.session;
 
   let auth = req.get("Authorization");
   if (auth && auth.indexOf("Bearer") === 0) {
@@ -65,19 +70,83 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/fundraiser',fundraiserRouter)
-app.use("/members", member);
+// 設置路由
+app.use("/members", memberRouter);
 //*********************************路由 *********************************/
 // 路由定義, callback 為路由處理器
 // 路由的兩個條件: 1. HTTP method; 2. 路徑
 
 //FINAL
+
+// 註冊表單路由 11.09 建立
+app.get("/auth/register", (req, res) => {
+  res.render("register"); // 渲染註冊表單頁面
+});
+
+app.use("/member", loginRouter); // 使用新的登入路由
+
+// 其他路由及頁面
+
+// 使用註冊路由
+app.use("/member", authRouter); // 使用 /member 作為路徑前端
+app.use('/fundraiser',fundraiserRouter)
+
+
+// 註冊處理路由
+app.post("/auth/register", upload.none(), async (req, res) => {
+  const { account, password } = req.body;
+  const output = {
+    success: false,
+    code: 0,
+    error: "",
+  };
+
+  if (!account || !password) {
+    output.error = "帳號和密碼皆為必填";
+    return res.json(output);
+  }
+
+  try {
+    // 1. 檢查帳號是否已存在
+    const checkSql = "SELECT * FROM m_member WHERE m_account = ?";
+    const [existingUser] = await memDB.query(checkSql, [account]);
+    if (existingUser.length > 0) {
+      output.error = "帳號已被使用";
+      output.code = 409; // 錯誤代碼，表示衝突
+      return res.json(output);
+    }
+
+    // 2. 雜湊密碼
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // 3. 新增會員資料到資料庫
+    const insertSql = "INSERT INTO m_member (m_account, m_password) VALUES (?, ?)";
+    const [result] = await memDB.query(insertSql, [account, hashedPassword]);
+
+    if (result.affectedRows === 1) {
+      output.success = true;
+      output.message = "註冊成功";
+    } else {
+      output.error = "註冊失敗，請稍後再試";
+    }
+
+    res.json(output);
+  } catch (error) {
+    console.error("註冊錯誤：", error);
+    output.error = "系統錯誤，請稍後再試";
+    res.json(output);
+  }
+});
+
 //首頁
 app.get("/", (req, res) => {
   res.locals.title = "首頁 - " + res.locals.title;
   res.locals.pageName = "home";
   res.render("home", { name: "Balduran" });
 });
+
+// 測試頁面
+
 //FINAL
 //表格
 app.get("/json-sales", (req, res) => {
@@ -159,7 +228,6 @@ app.get("/test", async (req, res) => {
   res.json({ rows, field });
 
 });
-
 app.get("/try-moment", (req, res) => {
   const fm = "YYYY-MM-DD HH:mm:ss";
   const m1 = moment(); //取得當下時間
@@ -168,6 +236,7 @@ app.get("/try-moment", (req, res) => {
   res.json({
     m1: m1.format(fm),
     m2: m2.format(fm),
+
     m3: m3.format(fm),
     m1v: m1.isValid(),
     m2v: m2.isValid(),
@@ -276,7 +345,7 @@ app.post("/login", upload.none(), async (req, res) => {
   }
   // 1. 先確定帳號是不是對的
   const sql = `SELECT * FROM m_member WHERE m_account=?`;
-  const [rows] = await db.query(sql, [email]);
+  const [rows] = await memDB.query(sql, [email]);
   if (!rows.length) {
     output.code = 400;
     output.error = "帳號或密碼錯誤";
@@ -323,7 +392,7 @@ app.get("/api/check-login", (req, res) => {
 //登出
 app.get("/logout", (req, res) => {
   delete req.session.admin;
-  res.redirect("/");
+  res.redirect("http://localhost:3000");
 });
 
 //token加密
@@ -412,10 +481,11 @@ app.get("/jwt-data", (req, res) => {
 app.use(express.static("public"));
 app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
 // ******* 404 頁面要在所有的路由後面 **************************
+// 404 頁面
 app.use((req, res) => {
   res.status(404).send("<h1>走錯路了</h1>");
-  // res.status(404).json({ msg: "走錯路了" });
 });
+
 const port = process.env.WEB_PORT || 3002;
 app.listen(port, () => {
   console.log(`Server 啟動於 ${port}`);
