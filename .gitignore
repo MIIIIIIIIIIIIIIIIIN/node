@@ -1,4 +1,5 @@
-/.vscode
+# Ignore dev.env file
+dev.env
 
-
-
+# Ignore .vscode folder
+.vscode/
