@@ -17,6 +17,10 @@ import authRouter from "./routes/member/auth.js";
 // import spotifyRouter from "./routes/George/albums.js";
 import albumsRouter from "./routes/George/albums.js";
 
+import forumRouter from "./routes/forum.js";
+import { fileURLToPath } from "url";
+import path from "path";
+
 //引入資料庫
 // import db from "./utils/connect-mysqls.js";
 import memDB from "./routes/member/mem-db.js";
@@ -26,10 +30,16 @@ import bcrypt from "bcrypt";
 import cors from "cors";
 //引入token
 import jwt from "jsonwebtoken";
+//讀取 .env
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // 建立 web server 物件
 const app = express();
-
 
 //註冊樣板引擎
 app.set("view engine", "ejs");
@@ -48,7 +58,7 @@ app.use(
     saveUninitialized: false,
     resave: false,
     secret: "kdhhkffhifaoi",
-        // cookie: {
+    // cookie: {
     //   maxAge: 1200_000, //session 存活時間 (20分鐘)
     //   httpOnly: false,
     // },
@@ -76,7 +86,6 @@ app.use((req, res, next) => {
 // 設置路由
 app.use("/members", memberRouter);
 
-
 //*********************************路由 *********************************/
 // 路由定義, callback 為路由處理器
 // 路由的兩個條件: 1. HTTP method; 2. 路徑
@@ -97,8 +106,7 @@ app.use("/member", loginRouter); // 使用新的登入路由
 
 // 使用註冊路由
 app.use("/member", authRouter); // 使用 /member 作為路徑前端
-app.use('/fundraiser',fundraiserRouter)
-
+app.use("/fundraiser", fundraiserRouter);
 
 // 註冊處理路由
 app.post("/auth/register", upload.none(), async (req, res) => {
@@ -128,7 +136,8 @@ app.post("/auth/register", upload.none(), async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // 3. 新增會員資料到資料庫
-    const insertSql = "INSERT INTO m_member (m_account, m_password) VALUES (?, ?)";
+    const insertSql =
+      "INSERT INTO m_member (m_account, m_password) VALUES (?, ?)";
     const [result] = await memDB.query(insertSql, [account, hashedPassword]);
 
     if (result.affectedRows === 1) {
@@ -481,18 +490,25 @@ app.get("/jwt-data", (req, res) => {
   res.json(req.my_jwt);
 });
 
-
+//論壇用
+app.use("/api/forum", forumRouter);
 
 // ********** 靜態內容資料夾 **************************
 app.use(express.static("public"));
 app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
+app.use(
+  "/member-images",
+  express.static(path.join(__dirname, "public/member-images"))
+);
+app.use(
+  "/project-images",
+  express.static(path.join(__dirname, "public/project-images"))
+);
 // ******* 404 頁面要在所有的路由後面 **************************
 // 404 頁面
 app.use((req, res) => {
   res.status(404).send("<h1>走錯路了</h1>");
 });
-
-
 
 const port = process.env.WEB_PORT || 3005;
 
