@@ -15,8 +15,20 @@ router.get("/albums", async (req, res) => {
   res.json({ rows });
 });
 
-// 取出專輯images
 router.get("/albums/:albumsId", async (req, res) => {
+  const { albumsId } = req.params;
+  try {
+    const sql = `SELECT * FROM pp_albums WHERE p_albums_id = ?`;
+    const [rowss] = await db.query(sql, [albumsId]);
+    res.json(rowss[0]);
+  } catch (error) {
+    console.error(err);
+    res.status(500).send("Error fetching album data");
+  }
+});
+
+// 取出專輯images
+router.get("/albums/:albumsId/images", async (req, res) => {
   const { albumsId } = req.params;
   try {
     const sql = `SELECT p_productsimg_filename from pp_products_img where p_products_id = ?`;
@@ -59,8 +71,8 @@ router.post("/postGenres", async (req, res) => {
 // posting keywords
 router.get("/getKeyWord", async (req, res) => {
   const { keyword } = req.query;
-  console.log("到底是誰? ", keyword);
-  console.log("Received GET request at /postKeyWord");
+  // console.log("到底是誰? ", keyword);
+  // console.log("Received GET request at /postKeyWord");
 
   const query = `SELECT 
   pp_albums.p_albums_id,

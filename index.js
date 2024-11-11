@@ -222,11 +222,11 @@ app.get("/my-params1/:action?/:id?", (req, res) => {
 app.use("/admins", admin2Router);
 
 //session 顯示頁面刷新次數
-// app.get("/mem-data", (req, res) => {
-//   req.session.my_num ||= 0;
-//   req.session.my_num++;
-//   res.json(req.session);
-// });
+app.get("/mem-data", (req, res) => {
+  req.session.my_num ||= 0;
+  req.session.my_num++;
+  res.json(req.session);
+});
 
 app.get("/test", async (req, res) => {
   const sql = "SELECT * FROM m_member WHERE m_member_id BETWEEN 1 and 20 "; //從第4筆開始取6筆資料
