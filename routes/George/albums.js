@@ -1,5 +1,5 @@
 import express from "express";
-// import db from "../../utils/connect-mysqls.js";
+import db from "../../utils/connect-mysqls.js";
 import memDB from "../member/mem-db.js";
 import axios from "axios";
 import querystring from "querystring";
@@ -59,8 +59,8 @@ router.post("/postGenres", async (req, res) => {
 // posting keywords
 router.get("/getKeyWord", async (req, res) => {
   const { keyword } = req.query;
-  console.log("到底是誰? ", keyword);
-  console.log("Received GET request at /postKeyWord");
+  // console.log("到底是誰? ", keyword);
+  // console.log("Received GET request at /postKeyWord");
 
   const query = `SELECT 
   pp_albums.p_albums_id,
