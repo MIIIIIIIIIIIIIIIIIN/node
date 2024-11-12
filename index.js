@@ -35,6 +35,10 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// 引入暱稱更新
+import updateNicknameRouter from "./routes/member/update-nickname.js"; 
+
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -89,6 +93,8 @@ app.use((req, res, next) => {
 
 // 設置路由
 app.use("/members", memberRouter);
+// 使用新的更新暱稱路由
+app.use("/member", updateNicknameRouter);
 
 //*********************************路由 *********************************/
 // 路由定義, callback 為路由處理器
