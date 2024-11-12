@@ -15,11 +15,11 @@ router.get("/albums", async (req, res) => {
   res.json({ rows });
 });
 
-router.get("/albums/:albumsId", async (req, res) => {
-  const { albumsId } = req.params;
+router.get("/albums/:pid", async (req, res) => {
+  const { pid } = req.params;
   try {
     const sql = `SELECT * FROM pp_albums WHERE p_albums_id = ?`;
-    const [rowss] = await db.query(sql, [albumsId]);
+    const [rowss] = await db.query(sql, [pid]);
     res.json(rowss[0]);
   } catch (error) {
     console.error(err);
@@ -28,11 +28,11 @@ router.get("/albums/:albumsId", async (req, res) => {
 });
 
 // 取出專輯images
-router.get("/albums/:albumsId/images", async (req, res) => {
-  const { albumsId } = req.params;
+router.get("/albums/images/:pid", async (req, res) => {
+  const { pid } = req.params;
   try {
     const sql = `SELECT p_productsimg_filename from pp_products_img where p_products_id = ?`;
-    const [imgRows] = await db.query(sql, [albumsId]);
+    const [imgRows] = await db.query(sql, [pid]);
     res.json({ images: imgRows }); // 傳到客戶端去嚕~
   } catch (error) {
     console.error(error);
