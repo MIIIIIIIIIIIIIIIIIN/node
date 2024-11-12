@@ -12,7 +12,7 @@ router.put("/update-nickname", async (req, res) => {
   }
 
   try {
-    const sql = "UPDATE m_member SET nickname = ? WHERE m_member_id = ?";
+    const sql = "UPDATE m_member SET m_nickname = ? WHERE m_member_id = ?";
     const [result] = await memDB.query(sql, [nickname, memberId]);
 
     if (result.affectedRows === 1) {
