@@ -40,7 +40,7 @@ router.get("/posts", async function (req, res) {
       `SELECT 
         f_message.*,
         m_member.m_nickname as username,
-        m_member.m_account as userImage,
+        m_member.m_icon as userImage,
         f_project_list.f_project_picture as coverImage
       FROM f_message
       LEFT JOIN m_member ON f_message.f_member_id = m_member.m_member_id
@@ -63,13 +63,13 @@ router.get("/posts", async function (req, res) {
         posts: rows.map((post) => ({
           id: post.f_message_id,
           userImage: post.userImage
-            ? `/member-images/${post.userImage}` // This will be served from public/member-images/
+            ? `/member-images/${post.userImage}`
             : "/public/default-avatar.jpg",
           username: post.username || "Anonymous",
           title: post.f_message_title || "Untitled",
           content: post.f_message_content || "",
           coverImage: post.coverImage
-            ? `/project-images/${post.coverImage}` // This will be served from public/img/
+            ? `/project-images/${post.coverImage}`
             : "/public/default-project.jpg",
           timeStamp: post.f_message_current,
           likes: 0,
