@@ -7,8 +7,7 @@ import db from "../utils/connect-mysqls.js";
 
 // 修改路由路徑，移除 fundraiser-list
 router.get("/plane/:project", async (req, res) => {
-  console.log(123);
-  // res.json({red:1254})
+
   
   try {
     
@@ -102,4 +101,123 @@ router.get("/message/:project", async (req, res) => {
   res.json({ rows, field });
 });
 
+
+
+// 留言
+router.delete('/message/:messageId', async (req, res) => {
+  try {
+    const { messageId } = req.params;
+
+    // 檢查留言是否存在
+    const [checkResult] = await db.query(
+      'SELECT * FROM f_message WHERE f_message_id = ?',
+      [messageId]
+    );
+
+    if (checkResult.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: '留言不存在'
+      });
+    }
+
+    // 刪除留言
+    await db.query(
+      'DELETE FROM f_message WHERE f_message_id = ?',
+      [messageId]
+    );
+
+    res.json({
+      status: 'success',
+      message: '留言刪除成功'
+    });
+  } catch (error) {
+    console.error('刪除留言錯誤:', error);
+    res.status(500).json({
+      status: 'error',
+      message: '刪除留言失敗',
+      error: error.message
+    });
+  }
+});
+
+
+
+router.post("/message/:projectId", async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { title, content, member_id } = req.body;
+
+    // 獲取最大樓層數
+    const [floorResult] = await db.query(
+      'SELECT MAX(f_message_floor) as maxFloor FROM f_message WHERE f_project_id = ?',
+      [projectId]
+    );
+    const nextFloor = (floorResult[0].maxFloor || 0) + 1;
+
+    // 插入新留言
+    const [result] = await db.query(
+      `INSERT INTO f_message 
+      (f_project_id, f_member_id, f_sale, f_message_floor, f_message_title, f_message_content) 
+      VALUES (?, ?, 0, ?, ?, ?)`,
+      [projectId, member_id, nextFloor, title, content]
+    );
+
+    res.json({
+      status: 'success',
+      message: '留言新增成功',
+      id: result.insertId
+    });
+  } catch (error) {
+    console.error('新增留言錯誤:', error);
+    res.status(500).json({
+      status: 'error',
+      message: '新增留言失敗',
+      error: error.message
+    });
+  }
+});
+
+
+router.put("/message/:messageId", async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { title, content } = req.body;
+
+    // 檢查留言是否存在
+    const [checkResult] = await db.query(
+      'SELECT * FROM f_message WHERE f_message_id = ?',
+      [messageId]
+    );
+
+    if (checkResult.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: '留言不存在'
+      });
+    }
+
+    // 更新留言
+    await db.query(
+      `UPDATE f_message 
+      SET f_message_title = ?, 
+          f_message_content = ?,
+          f_message_current = CURRENT_TIMESTAMP
+      WHERE f_message_id = ?`,
+      [title, content, messageId]
+    );
+
+    res.json({
+      status: 'success',
+      message: '留言更新成功'
+    });
+  } catch (error) {
+    console.error('編輯留言錯誤:', error);
+    res.status(500).json({
+      status: 'error',
+      message: '編輯留言失敗',
+      error: error.message
+    });
+  }
+});
 export default router;
