@@ -109,7 +109,7 @@ app.use("/member", loginRouter); // 使用新的登入路由
 // 其他路由及頁面
 
 // 使用註冊路由
-app.use("/member", authRouter); // 使用 /member 作為路徑前端
+app.use("/member", authRouter); // 使用 /member 作為註冊請求路徑前端
 app.use("/fundraiser", fundraiserRouter);
 
 // 註冊處理路由

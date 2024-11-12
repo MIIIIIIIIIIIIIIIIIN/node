@@ -31,7 +31,9 @@ router.post("/login", upload.none(), async (req, res) => {
   }
 
   const row = rows[0];
-  const isPasswordCorrect = password === row.m_password;
+  
+  // 使用 bcrypt.compare 比較密碼
+  const isPasswordCorrect = await bcrypt.compare(password, row.m_password);
 
   if (!isPasswordCorrect) {
     output.code = 450;
@@ -53,27 +55,6 @@ router.post("/login", upload.none(), async (req, res) => {
   };
   output.success = true;
   res.json(output);
-});
-
-// 檢查登入狀態
-router.get("/check-login", (req, res) => {
-  if (req.session.admin) {
-    res.json({
-      loggedIn: true,
-      memberInfo: req.session.admin,
-    });
-  } else {
-    res.json({
-      loggedIn: false,
-      message: "尚未登入",
-    });
-  }
-});
-
-// 登出功能
-router.get("/logout", (req, res) => {
-  delete req.session.admin;
-  res.redirect("/");
 });
 
 export default router;
