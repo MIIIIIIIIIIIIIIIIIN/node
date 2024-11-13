@@ -5,6 +5,8 @@ import axios from "axios";
 import querystring from "querystring";
 
 const router = express.Router();
+const JAMENDO_API_BASE_URL = "https://api.jamendo.com/v3.0";
+const JAMENDO_API_KEY = "1c0b1d31";
 
 // 從albums table 撈資料
 router.get("/albums", async (req, res) => {
@@ -179,52 +181,101 @@ WHERE
   }
 });
 
-//FINAL Spotify
+
+//Spotify
 router.get("/home", (req, res) => {
   res.send("授權成功，已經可以使用Spotify API!");
 });
+
+// Login Spotify
 router.get("/logintospotify", (req, res) => {
+  const pid = req.query.pid; // 獲取 pid
   const scope = "user-read-private user-read-email";
   const authURL =
     "https://accounts.spotify.com/authorize?" +
     querystring.stringify({
       response_type: "code",
-      client_id: CLIENT_ID,
+      client_id: process.env.CLIENT_ID,
       scope: scope,
-      redirect_uri: REDIRECT_URI,
+      redirect_uri: process.env.REDIRECT_URI,
+      state: pid,
     });
   res.redirect(authURL);
 });
 
+// go to front end
 router.get("/callback", async (req, res) => {
   const code = req.query.code || null;
+  const pid = req.query.state; // 動態取得 pid
 
   try {
     const response = await axios.post(
       "https://accounts.spotify.com/api/token",
       querystring.stringify({
         code: code,
-        redirect_uri: REDIRECT_URI,
+        redirect_uri: process.env.REDIRECT_URI,
         grant_type: "authorization_code",
       }),
       {
         headers: {
           Authorization:
             "Basic " +
-            Buffer.from(CLIENT_ID + ":" + CLIENT_SECRET).toString("base64"),
+            Buffer.from(process.env.CLIENT_ID + ":" + process.env.CLIENT_SECRET).toString("base64"),
           "Content-Type": "application/x-www-form-urlencoded",
         },
       }
     );
     const access_token = response.data.access_token;
-    const refresh_token = response.data.refresh_token;
-    res.redirect(
-      `http://localhost:3000/George/product/access_token=${access_token}`
-    );
+    // 重定向回前端頁面，包含動態 pid 和 access_token
+    res.redirect(`http://localhost:3000/George/product/${pid}?access_token=${access_token}`);
   } catch (error) {
     console.error(error);
     res.send("Error retrieving access token");
   }
 });
+
+// get spotify play list
+// 抓取播放清單資料的 API 路由
+router.get("/playlist/:playlistId", async (req, res) => {
+  const accessToken = req.query.access_token;
+  const playlistId = req.params.playlistId;
+  const { pid } = req.params.pid; // 拿動態變數
+  try {
+    const response = await axios.get(
+      `https://api.spotify.com/v1/playlists/${playlistId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error fetching playlist:", error);
+    res.status(500).send("Failed to fetch playlist data");
+  }
+});
+
+//jamendo api for music
+router.get("/tracks", async (req, res) => {
+  try {
+    const response = await axios.get(`${JAMENDO_API_BASE_URL}/tracks`, {
+      params: {
+        client_id: JAMENDO_API_KEY,
+        format: "json",
+        limit: 10,
+        order: "popularity_total",
+      },
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error fetching tracks:", error.message);
+    res.status(500).json({ error: "Failed to fetch tracks from Jamendo" });
+  }
+});
+
+// router.get('/tracks', (req, res) => {
+//   res.send("Tracks endpoint is working!");
+// });
 
 export default router;

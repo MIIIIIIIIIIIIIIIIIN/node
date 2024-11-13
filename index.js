@@ -33,12 +33,11 @@ import jwt from "jsonwebtoken";
 //讀取 .env
 import dotenv from "dotenv";
 
-dotenv.config();
-
 // 引入暱稱更新
 import updateNicknameRouter from "./routes/member/update-nickname.js"; 
 import updateIconRouter from "./routes/member/update-icon.js";
 
+dotenv.config();
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -106,8 +105,6 @@ app.use("/member", updateIconRouter);
 // 路由定義, callback 為路由處理器
 // 路由的兩個條件: 1. HTTP method; 2. 路徑
 
-//商城
-app.use("/api", albumsRouter);
 
 //FINAL
 
@@ -509,6 +506,8 @@ app.get("/jwt-data", (req, res) => {
 //論壇用
 app.use("/api/forum", forumRouter);
 
+
+
 // ********** 靜態內容資料夾 **************************
 app.use(express.static("public"));
 app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
@@ -521,6 +520,9 @@ app.use(
   express.static(path.join(__dirname, "public/project-images"))
 );
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+app.use("/api", albumsRouter);
+
 // ******* 404 頁面要在所有的路由後面 **************************
 // 404 頁面
 app.use((req, res) => {
