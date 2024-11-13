@@ -41,7 +41,7 @@ router.get("/posts", async function (req, res) {
         f_message.*,
         m_member.m_nickname as username,
         m_member.m_icon as userImage,
-        f_project_list.f_project_picture as coverImage,
+        f_project_list.top as coverImage,
         COUNT(DISTINCT f_like.f_like_id) as likes_count,
         COUNT(DISTINCT f_share.f_share_id) as shares_count
       FROM f_message
