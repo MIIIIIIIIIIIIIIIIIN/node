@@ -1,6 +1,6 @@
 // routes/member/update-info.js
 import express from "express";
-import memDB from "../utils/mem-db.js";
+import memDB from "./mem-db.js";
 
 const router = express.Router();
 

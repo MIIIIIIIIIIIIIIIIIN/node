@@ -35,20 +35,31 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// 引入暱稱更新
+import updateNicknameRouter from "./routes/member/update-nickname.js"; 
+import updateIconRouter from "./routes/member/update-icon.js";
+
+
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 建立 web server 物件
 const app = express();
 
+// 將 bcrypt 替換為 bcryptjs
+// const bcrypt = require("bcryptjs");
+
+
 //註冊樣板引擎
 app.set("view engine", "ejs");
 // 設定 top-level middleware
 const corsOptions = {
   credentials: true,
-  origin: (origin, callback) => {
-    callback(null, true);
-  },
+  // origin: (origin, callback) => {
+  //   callback(null, true);
+  // },
+  origin: "http://localhost:3000",
 };
 app.use(cors(corsOptions));
 app.use(express.urlencoded({ extended: true }));
@@ -57,11 +68,11 @@ app.use(
   session({
     saveUninitialized: false,
     resave: false,
-    secret: "kdhhkffhifaoi",
-    // cookie: {
-    //   maxAge: 1200_000, //session 存活時間 (20分鐘)
-    //   httpOnly: false,
-    // },
+    secret: "kdhhkffhifaoi", // 替換為您的 session 密鑰
+    cookie: {
+      maxAge: 1200_000, // 設定 session 的存活時間（20 分鐘）
+      httpOnly: true, // 確保 Cookie 僅在 HTTP 請求中傳遞
+    },
   })
 );
 
@@ -85,6 +96,11 @@ app.use((req, res, next) => {
 
 // 設置路由
 app.use("/members", memberRouter);
+// 使用新的更新暱稱路由
+app.use("/member", updateNicknameRouter);
+
+app.use("/member", updateIconRouter);
+
 
 //*********************************路由 *********************************/
 // 路由定義, callback 為路由處理器
@@ -105,7 +121,7 @@ app.use("/member", loginRouter); // 使用新的登入路由
 // 其他路由及頁面
 
 // 使用註冊路由
-app.use("/member", authRouter); // 使用 /member 作為路徑前端
+app.use("/member", authRouter); // 使用 /member 作為註冊請求路徑前端
 app.use("/fundraiser", fundraiserRouter);
 
 // 註冊處理路由
@@ -230,7 +246,7 @@ app.get("/my-params1/:action?/:id?", (req, res) => {
 //4.6
 app.use("/admins", admin2Router);
 
-//session 顯示頁面刷新次數
+// session 顯示頁面刷新次數
 app.get("/mem-data", (req, res) => {
   req.session.my_num ||= 0;
   req.session.my_num++;
@@ -504,6 +520,7 @@ app.use(
   "/project-images",
   express.static(path.join(__dirname, "public/project-images"))
 );
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // ******* 404 頁面要在所有的路由後面 **************************
 // 404 頁面
 app.use((req, res) => {

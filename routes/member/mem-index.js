@@ -1,6 +1,6 @@
 import express from "express";
 import bcrypt from "bcrypt";
-import memDB from "../utils/mem-db.js"; // 匯入 memDB 連接池
+import memDB from "./mem-db.js";
 
 const app = express();
 const PORT = 3005;

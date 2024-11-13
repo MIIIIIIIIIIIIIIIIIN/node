@@ -172,5 +172,14 @@ router.post('/login', async (req, res, next) => {
 //   }
 // })
 
-// 111
+
+// 測試 session 是否有效的受保護路由
+router.get('/protected', (req, res) => {
+  if (!req.session.adminId) {
+    // 如果 session 中沒有 adminId，返回 401 錯誤，表示未登入
+    return res.status(401).json({ message: "請先登入" });
+  }
+  // 如果 session 有效，返回成功訊息
+  res.json({ message: "驗證成功" });
+});
 export default router
