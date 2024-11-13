@@ -246,7 +246,7 @@ app.get("/my-params1/:action?/:id?", (req, res) => {
 //4.6
 app.use("/admins", admin2Router);
 
-// session 顯示頁面刷新次數
+//session 顯示頁面刷新次數
 app.get("/mem-data", (req, res) => {
   req.session.my_num ||= 0;
   req.session.my_num++;
