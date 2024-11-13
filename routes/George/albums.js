@@ -190,7 +190,7 @@ router.get("/home", (req, res) => {
 // Login Spotify
 router.get("/logintospotify", (req, res) => {
   const pid = req.query.pid; // 獲取 pid
-  const scope = "user-read-private user-read-email";
+  const scope = "user-read-private user-read-email user-modify-playback-state user-read-playback-state user-read-currently-playing streaming";
   const authURL =
     "https://accounts.spotify.com/authorize?" +
     querystring.stringify({
