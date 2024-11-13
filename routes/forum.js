@@ -74,7 +74,7 @@ router.get("/posts", async function (req, res) {
           title: post.f_message_title || "Untitled",
           content: post.f_message_content || "",
           coverImage: post.coverImage
-            ? `/project-images/${post.coverImage}`
+            ? `${post.coverImage}`
             : "/public/default-project.jpg",
           timeStamp: post.f_message_current,
           likes: Number(post.likes_count) || 0,
