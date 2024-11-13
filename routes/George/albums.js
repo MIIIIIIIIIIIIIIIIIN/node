@@ -239,7 +239,7 @@ router.get("/callback", async (req, res) => {
 router.get("/playlist/:playlistId", async (req, res) => {
   const accessToken = req.query.access_token;
   const playlistId = req.params.playlistId;
-  const { pid } = req.params.pid; // 拿動態變數
+  
   try {
     const response = await axios.get(
       `https://api.spotify.com/v1/playlists/${playlistId}`,
