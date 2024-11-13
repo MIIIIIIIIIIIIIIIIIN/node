@@ -22,7 +22,7 @@ import { fileURLToPath } from "url";
 import path from "path";
 
 //引入資料庫
-// import db from "./utils/connect-mysqls.js";
+import db from "./utils/connect-mysqls.js";
 import memDB from "./routes/member/mem-db.js";
 //引入雜湊工具
 import bcrypt from "bcrypt";
@@ -527,7 +527,9 @@ app.use((req, res) => {
   res.status(404).send("<h1>走錯路了</h1>");
 });
 
-const port = process.env.WEB_PORT || 3005;
+
+
+const port = process.env.WEB_PORT || 3002;
 
 app.listen(port, () => {
   console.log(`Server 啟動於 ${port}`);

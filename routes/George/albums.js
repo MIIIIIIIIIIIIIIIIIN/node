@@ -15,16 +15,105 @@ router.get("/albums", async (req, res) => {
   res.json({ rows });
 });
 
-// 取出專輯images
-router.get("/albums/:albumsId", async (req, res) => {
-  const { albumsId } = req.params;
+router.get("/albums/:pid", async (req, res) => {
+  const { pid } = req.params;
   try {
-    const sql = `SELECT p_productsimg_filename from pp_products_img where p_products_id = ?`;
-    const [imgRows] = await db.query(sql, [albumsId]);
+    const sql = `SELECT * FROM pp_albums WHERE p_albums_id = ?`;
+    const [rowss] = await db.query(sql, [pid]);
+    res.json(rowss[0]);
+  } catch (error) {
+    console.error(err);
+    res.status(500).send("Error fetching album data");
+  }
+});
+
+router.get("/otheralbums/:artist/:pid", async (req, res) => {
+  const { artist, pid } = req.params;
+  try {
+    const otherAlbumsQuery = `
+      SELECT * FROM pp_albums 
+      WHERE p_albums_artist = ? AND p_albums_id != ? 
+      ORDER BY p_albums_release_date DESC;
+    `;
+    const [otherAlbums] = await db.query(otherAlbumsQuery, [artist, pid]);
+
+    res.json({ otherAlbums });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error fetching album data");
+  }
+});
+
+// 取出專輯images
+router.get("/getImages/:pid", async (req, res) => {
+  const { pid } = req.params;
+
+  try {
+    const sql = `SELECT p_productsimg_filename from pp_products_img where p_albums_id = ?`;
+    const [imgRows] = await db.query(sql, [pid]);
     res.json({ images: imgRows }); // 傳到客戶端去嚕~
   } catch (error) {
     console.error(error);
     res.json({ success: false, message: "無法取得圖片" });
+  }
+});
+
+router.get("/getImages/:artist/:pid", async (req, res) => {
+  const { artist, pid } = req.params;
+  try {
+    const otherImagesquery = `
+    SELECT 
+    pp_albums.p_albums_id, 
+    pp_albums.p_albums_artist,
+    pp_albums.p_albums_title,
+    pp_products_img.p_productsimg_filename 
+	FROM pp_albums 
+    JOIN pp_products_img 
+    ON pp_products_img.p_albums_id = pp_albums.p_albums_id 
+    WHERE pp_albums.p_albums_artist = ?
+    AND pp_albums.p_albums_id != ?
+    ORDER BY pp_albums.p_albums_release_date DESC;
+    `;
+    const [otherImages] = await db.query(otherImagesquery, [artist, pid]);
+
+    res.json(otherImages);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error fetching album data");
+  }
+});
+
+// you may like
+router.get("/youmaylike/:pid", async (req, res) => {
+  const { pid } = req.params;
+  try {
+    const otheryoumaylikequery = `
+    SELECT 
+      pp_albums.p_albums_id, 
+      pp_albums.p_albums_artist, 
+      pp_albums.p_albums_title, 
+      pp_products_img.p_productsimg_filename,
+      pp_genres.p_genres_name
+    FROM 
+      pp_albums 
+    JOIN 
+      pp_album_genres ON pp_album_genres.p_albums_id = pp_albums.p_albums_id
+    JOIN 
+      pp_products_img ON pp_products_img.p_albums_id = pp_albums.p_albums_id
+    JOIN
+      pp_genres ON pp_album_genres.p_genres_id = pp_genres.p_genres_id
+    WHERE 
+      pp_album_genres.p_genres_id = (SELECT p_genres_id FROM pp_album_genres WHERE p_albums_id = ? LIMIT 1) 
+      AND pp_albums.p_albums_id != ? 
+    ORDER BY 
+      pp_albums.p_albums_release_date DESC;
+  `;
+    const [youmaylike] = await db.query(otheryoumaylikequery, [pid, pid]);
+
+    res.json(youmaylike);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error fetching albums");
   }
 });
 
@@ -109,6 +198,7 @@ router.get("/logintospotify", (req, res) => {
 
 router.get("/callback", async (req, res) => {
   const code = req.query.code || null;
+
   try {
     const response = await axios.post(
       "https://accounts.spotify.com/api/token",
@@ -129,7 +219,7 @@ router.get("/callback", async (req, res) => {
     const access_token = response.data.access_token;
     const refresh_token = response.data.refresh_token;
     res.redirect(
-      `http://localhost:3000/George/products-detail?access_token=${access_token}`
+      `http://localhost:3000/George/product/access_token=${access_token}`
     );
   } catch (error) {
     console.error(error);
