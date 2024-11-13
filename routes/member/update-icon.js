@@ -24,6 +24,8 @@ router.post('/update-icon', upload.single('icon'), async (req, res) => {
     const [result] = await memDB.query(sql, [filePath, memberId]);
 
     if (result.affectedRows === 1) {
+      // update session
+      req.session.admin.icon = filePath;
       res.json({ message: "圖片已更新", icon: filePath });
     } else {
       res.status(500).json({ message: "更新圖片失敗，請稍後再試" });

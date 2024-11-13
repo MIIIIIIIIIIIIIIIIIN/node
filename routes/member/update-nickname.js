@@ -16,6 +16,8 @@ router.put("/update-nickname", async (req, res) => {
     const [result] = await memDB.query(sql, [nickname, memberId]);
 
     if (result.affectedRows === 1) {
+      req.session.admin.nickname = nickname;
+
       res.json({ message: "暱稱已更新" });
     } else {
       res.status(500).json({ message: "更新失敗，請稍後再試" });
