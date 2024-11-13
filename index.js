@@ -494,7 +494,7 @@ app.use((req, res) => {
 
 
 
-const port = process.env.WEB_PORT || 3005;
+const port = process.env.WEB_PORT || 3002;
 
 app.listen(port, () => {
   console.log(`Server 啟動於 ${port}`);
