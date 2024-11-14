@@ -3,7 +3,8 @@ import memDB from "./mem-db.js"; // 引入資料庫連線
 
 const router = express.Router();
 
-router.put("/", async (req, res) => {
+router.put("/update-gender", async (req, res) => {
+  console.log("Received request to update gender"); // 確認是否收到請求
   try {
     const { gender } = req.body; // 從請求的資料中取得 gender
     const memberId = req.session.admin?.id; // 從 session 中取得用戶 ID
@@ -14,7 +15,7 @@ router.put("/", async (req, res) => {
     }
 
     // 檢查 gender 是否有效
-    if (!["male", "female", "other"].includes(gender)) {
+    if (!["男", "女", "其他"].includes(gender)) {
       return res.status(400).json({ message: "性別格式錯誤" });
     }
 
@@ -25,6 +26,8 @@ router.put("/", async (req, res) => {
     );
 
     if (result.affectedRows > 0) {
+      req.session.admin.gender = gender;
+
       res.json({ message: "性別更新成功", gender });
     } else {
       res.status(404).json({ message: "用戶不存在" });

@@ -39,6 +39,8 @@ dotenv.config();
 import updateNicknameRouter from "./routes/member/update-nickname.js"; 
 import updateIconRouter from "./routes/member/update-icon.js";
 import updateBioRouter from "./routes/member/update-bio.js";
+import updateGenderRouter from "./routes/member/update-gender.js";
+import updateLocationRouter from "./routes/member/update-location.js";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -100,6 +102,8 @@ app.use("/members", memberRouter);
 app.use("/member", updateNicknameRouter);
 app.use("/member", updateIconRouter);
 app.use("/member", updateBioRouter);
+app.use("/member", updateGenderRouter);
+app.use("/member", updateLocationRouter);
 
 //*********************************路由 *********************************/
 // 路由定義, callback 為路由處理器
