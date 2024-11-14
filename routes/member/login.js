@@ -53,7 +53,9 @@ router.post("/login", upload.none(), async (req, res) => {
     phone: row.m_phone,
     icon: row.m_icon,
     bio: row.m_bio,
+    district: row.m_district,
   };
+  
   output.success = true;
   res.json(output);
 });
