@@ -7,10 +7,10 @@ const router = express.Router();
 
 // 註冊路由
 router.post('/register', async (req, res) => {
-  const { nickname, account, password, email, location } = req.body;
+  const { name, gender, birth, nickname, account, password, email, location } = req.body;
 
-  if (!account || !password || !email) {
-    return res.status(400).json({ message: '帳號、密碼和信箱為必填項目' });
+  if (!nickname || !birth || !account || !password || !email) {
+    return res.status(400).json({ message: '暱稱、生日、帳號、密碼和信箱為必填項目' });
   }
 
   try {
@@ -30,8 +30,8 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // 將暱稱、帳號、密碼、信箱和所在地存入資料庫
-    const sql = 'INSERT INTO m_member (m_nickname, m_account, m_password, m_email, m_location) VALUES (?, ?, ?, ?, ?)';
-    await memDB.query(sql, [nickname, account, hashedPassword, email, location]);
+    const sql = 'INSERT INTO m_member (m_name, m_gender, m_birth, m_nickname, m_account, m_password, m_email, m_location) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+    await memDB.query(sql, [name, gender, birth, nickname, account, hashedPassword, email, location]);
 
     res.status(201).json({ message: '註冊成功' });
   } catch (error) {
