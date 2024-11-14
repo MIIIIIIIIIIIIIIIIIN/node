@@ -42,6 +42,8 @@ import updateBioRouter from "./routes/member/update-bio.js";
 import updateGenderRouter from "./routes/member/update-gender.js";
 import updateLocationRouter from "./routes/member/update-location.js";
 import updatePasswordRouter from "./routes/member/update-password.js";
+import favoritesRouter from "./routes/member/favorites.js";
+import memberDataRouter from "./routes/member/data.js";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -106,6 +108,8 @@ app.use("/member", updateBioRouter);
 app.use("/member", updateGenderRouter);
 app.use("/member", updateLocationRouter);
 app.use("/member", updatePasswordRouter);
+app.use("/member", memberDataRouter);
+
 
 //*********************************路由 *********************************/
 // 路由定義, callback 為路由處理器
@@ -257,6 +261,8 @@ app.get("/mem-data", (req, res) => {
   req.session.my_num++;
   res.json(req.session);
 });
+
+
 
 app.get("/test", async (req, res) => {
   const sql = "SELECT * FROM m_member WHERE m_member_id BETWEEN 1 and 20 "; //從第4筆開始取6筆資料
