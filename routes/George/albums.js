@@ -11,10 +11,8 @@ const JAMENDO_API_KEY = "1c0b1d31";
 // 從albums table 撈資料
 router.get("/albums", async (req, res) => {
   const sql = "SELECT * FROM pp_albums ORDER BY p_albums_id DESC";
-  //  LIMIT 3, 6"; //從第4筆開始取6筆資料
   const [rows] = await db.query(sql);
-  // fields: 會拿到欄位相關的資訊, 通常不會用到
-  res.json({ rows });
+  res.json({rows});
 });
 
 router.get("/albums/:pid", async (req, res) => {
@@ -29,6 +27,7 @@ router.get("/albums/:pid", async (req, res) => {
   }
 });
 
+// 也~可以
 router.get("/otheralbums/:artist/:pid", async (req, res) => {
   const { artist, pid } = req.params;
   try {
@@ -59,6 +58,7 @@ router.get("/getImages/:pid", async (req, res) => {
     res.json({ success: false, message: "無法取得圖片" });
   }
 });
+
 
 router.get("/getImages/:artist/:pid", async (req, res) => {
   const { artist, pid } = req.params;
@@ -111,13 +111,15 @@ router.get("/youmaylike/:pid", async (req, res) => {
       pp_albums.p_albums_release_date DESC;
   `;
     const [youmaylike] = await db.query(otheryoumaylikequery, [pid, pid]);
-
     res.json(youmaylike);
+
   } catch (error) {
     console.error(error);
     res.status(500).send("Error fetching albums");
   }
 });
+
+
 
 // genres fetching
 router.get("/getGenres", async (req, res) => {
@@ -181,6 +183,82 @@ WHERE
   }
 });
 
+// Cart
+// 加入購物車 API 路由
+router.post("/addToCart", (req, res) => {
+  const { commodity_id, albumId, userId, pic, quantity, price } = req.body;
+
+  if (!price || !quantity || !pic || !albumId || !userId) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  const query = `INSERT INTO pp_carts (p_commodity_id, p_albums_id, user_id, p_cart_created_at , p_cart_img_filename, p_cart_quantity , p_cart_price )
+  VALUES (?, ?, ?, NOW(), ?, ?, ?)`;
+
+  const values = [commodity_id, albumId, userId, pic, quantity, price];
+
+  db.query(query, values, (error, results) => {
+    if (error) {
+      console.error("Error inserting data: ", error);
+      return res.status(500).json({ message: "Error inserting data" });
+    }
+    res.status(200).json({ message: "Item added to cart", data: results });
+  });
+});
+
+// get data from mem db
+router.get("/getMem", async (req, res) => {
+  const query = `SELECT * FROM m_member`;
+  try {
+    const [memrows] = await db.query(query);
+    res.json(memrows);
+  } catch (err) {
+    console.error("查詢錯誤", err);
+    return res.status(500).json({ error: "查詢錯誤" });
+  }
+});
+
+router.get("/getMem/:urid", async (req, res) => {
+  const { urid } = req.params;
+  try {
+    const sql = `SELECT * FROM pp_carts WHERE user_id = ?`;
+    const [memrowss] = await db.query(sql, [urid]);
+    res.json(memrowss);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error fetching album data");
+  }
+});
+
+
+const checkMember = async (req, res, next) => {
+  try {
+    // 取得會員資料
+    const response = await fetch('http://localhost:3005/mem-data', {
+      headers: {
+        'Cookie': req.headers.cookie // 轉發 cookie
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      return res.status(401).json({ error: '請先登入' });
+    }
+
+    const memberData = await response.json();
+    
+    if (!memberData.admin) {
+      return res.status(401).json({ error: '請先登入' });
+    }
+
+    // 將會員資料存到 req 中供後續路由使用
+    req.memberData = memberData;
+    next();
+  } catch (error) {
+    console.error('驗證會員失敗:', error);
+    res.status(500).json({ error: '伺服器錯誤' });
+  }
+};
 
 //Spotify
 router.get("/home", (req, res) => {
@@ -190,7 +268,8 @@ router.get("/home", (req, res) => {
 // Login Spotify
 router.get("/logintospotify", (req, res) => {
   const pid = req.query.pid; // 獲取 pid
-  const scope = "user-read-private user-read-email user-modify-playback-state user-read-playback-state user-read-currently-playing streaming";
+  const scope =
+    "user-read-private user-read-email user-modify-playback-state user-read-playback-state user-read-currently-playing streaming";
   const authURL =
     "https://accounts.spotify.com/authorize?" +
     querystring.stringify({
@@ -220,14 +299,18 @@ router.get("/callback", async (req, res) => {
         headers: {
           Authorization:
             "Basic " +
-            Buffer.from(process.env.CLIENT_ID + ":" + process.env.CLIENT_SECRET).toString("base64"),
+            Buffer.from(
+              process.env.CLIENT_ID + ":" + process.env.CLIENT_SECRET
+            ).toString("base64"),
           "Content-Type": "application/x-www-form-urlencoded",
         },
       }
     );
     const access_token = response.data.access_token;
     // 重定向回前端頁面，包含動態 pid 和 access_token
-    res.redirect(`http://localhost:3000/George/product/${pid}?access_token=${access_token}`);
+    res.redirect(
+      `http://localhost:3000/George/product/${pid}?access_token=${access_token}`
+    );
   } catch (error) {
     console.error(error);
     res.send("Error retrieving access token");
@@ -239,7 +322,7 @@ router.get("/callback", async (req, res) => {
 router.get("/playlist/:playlistId", async (req, res) => {
   const accessToken = req.query.access_token;
   const playlistId = req.params.playlistId;
-  
+
   try {
     const response = await axios.get(
       `https://api.spotify.com/v1/playlists/${playlistId}`,
