@@ -41,6 +41,7 @@ import updateIconRouter from "./routes/member/update-icon.js";
 import updateBioRouter from "./routes/member/update-bio.js";
 import updateGenderRouter from "./routes/member/update-gender.js";
 import updateLocationRouter from "./routes/member/update-location.js";
+import updatePasswordRouter from "./routes/member/update-password.js";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -104,6 +105,7 @@ app.use("/member", updateIconRouter);
 app.use("/member", updateBioRouter);
 app.use("/member", updateGenderRouter);
 app.use("/member", updateLocationRouter);
+app.use("/member", updatePasswordRouter);
 
 //*********************************路由 *********************************/
 // 路由定義, callback 為路由處理器
