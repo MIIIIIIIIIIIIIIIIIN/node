@@ -15,7 +15,7 @@ router.put("/update-gender", async (req, res) => {
     }
 
     // 檢查 gender 是否有效
-    if (!["男", "女", "其他"].includes(gender)) {
+    if (!["男", "女", "不透露"].includes(gender)) {
       return res.status(400).json({ message: "性別格式錯誤" });
     }
 
