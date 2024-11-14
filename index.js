@@ -38,7 +38,7 @@ dotenv.config();
 // 引入暱稱更新
 import updateNicknameRouter from "./routes/member/update-nickname.js"; 
 import updateIconRouter from "./routes/member/update-icon.js";
-
+import updateBioRouter from "./routes/member/update-bio.js";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -98,9 +98,8 @@ app.use((req, res, next) => {
 app.use("/members", memberRouter);
 // 使用新的更新暱稱路由
 app.use("/member", updateNicknameRouter);
-
 app.use("/member", updateIconRouter);
-
+app.use("/member", updateBioRouter);
 
 //*********************************路由 *********************************/
 // 路由定義, callback 為路由處理器
@@ -401,6 +400,7 @@ app.post("/login", upload.none(), async (req, res) => {
     location: row.m_location,
     phone: row.m_phone,
     icon: row.m_icon,
+    bio: row.m_bio,
   };
   output.success = true;
   res.json(output);
