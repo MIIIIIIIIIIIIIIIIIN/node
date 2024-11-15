@@ -1,20 +1,25 @@
+// routes/member/data.js
 import express from 'express';
-import memDB from './mem-db.js';
+import memDB from '../member/mem-db.js';
 
 const router = express.Router();
 
-// 使用動態路由來接收 memberId
+// 定義 `/mem-data/:memberId` 路由，用於獲取特定會員的資料
 router.get("/mem-data/:memberId", async (req, res) => {
-  const { memberId } = req.params; // 從路徑參數中獲取 memberId
+  const { memberId } = req.params; // 獲取 URL 中的 `memberId`
+
   try {
+    // 從資料庫中查詢會員資料
     const [data] = await memDB.query(
-      "SELECT m_nickname, m_birth, m_gender, m_location, m_bio, m_district, m_icon FROM m_member WHERE m_member_id = ?",
+      "SELECT * FROM m_member WHERE m_member_id = ?",
       [memberId]
     );
 
+    // 如果找到資料，返回成功訊息
     if (data.length > 0) {
-      res.json(data[0]); // 返回會員資料
+      res.json({ success: true, ...data[0] });
     } else {
+      // 如果找不到資料，返回 404 錯誤
       res.status(404).json({ message: "會員資料不存在" });
     }
   } catch (error) {

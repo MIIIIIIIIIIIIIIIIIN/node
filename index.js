@@ -111,6 +111,7 @@ app.use("/member", updatePasswordRouter);
 app.use("/member", memberDataRouter);
 
 
+
 //*********************************路由 *********************************/
 // 路由定義, callback 為路由處理器
 // 路由的兩個條件: 1. HTTP method; 2. 路徑

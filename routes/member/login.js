@@ -17,7 +17,7 @@ router.post("/login", upload.none(), async (req, res) => {
     code: 0,
     error: "",
   };
-  
+
   let { email, password } = req.body;
   email = email ? email.trim() : "";
   password = password ? password.trim() : "";
@@ -38,7 +38,7 @@ router.post("/login", upload.none(), async (req, res) => {
   }
 
   const row = rows[0];
-  
+
   // 使用 bcrypt.compare 比較密碼
   const isPasswordCorrect = await bcrypt.compare(password, row.m_password);
 
@@ -56,7 +56,7 @@ router.post("/login", upload.none(), async (req, res) => {
       email: row.m_email,
     },
     JWT_SECRET_KEY, // 使用從 dev.env 中讀取的密鑰
-    { expiresIn: "1h" } 
+    { expiresIn: "1h" }
   );
 
   req.session.admin = {
@@ -75,6 +75,7 @@ router.post("/login", upload.none(), async (req, res) => {
 
   output.success = true;
   output.data = {
+    id: row.m_member_id, // 確保 id 被包含在回傳的資料中
     token: token,
     nickname: row.m_nickname,
     email: row.m_email,
