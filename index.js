@@ -44,6 +44,7 @@ import updateLocationRouter from "./routes/member/update-location.js";
 import updatePasswordRouter from "./routes/member/update-password.js";
 import favoritesRouter from "./routes/member/favorites.js";
 import memberDataRouter from "./routes/member/data.js";
+import checkAuth from "./routes/member/check-auth.js";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -109,6 +110,7 @@ app.use("/member", updateGenderRouter);
 app.use("/member", updateLocationRouter);
 app.use("/member", updatePasswordRouter);
 app.use("/member", memberDataRouter);
+app.use("/member", checkAuth);
 
 
 
