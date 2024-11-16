@@ -10,6 +10,7 @@ import upload from "./utils/upload-imgs.js";
 //引入路由群組
 import admin2Router from "./routes/admin2.js";
 import memberRouter from "./routes/member/member.js";
+import memberRouters from "./routes/member/auth.js";
 
 import fundraiserRouter from "./routes/fundraiser.js";
 import loginRouter from "./routes/member/login.js"; // 引入新的 login.js
@@ -102,6 +103,7 @@ app.use((req, res, next) => {
 
 // 設置路由
 app.use("/members", memberRouter);
+app.use("/member", memberRouters);
 // 使用新的更新暱稱路由
 app.use("/member", updateNicknameRouter);
 app.use("/member", updateIconRouter);
