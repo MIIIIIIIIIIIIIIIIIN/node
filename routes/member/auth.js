@@ -64,4 +64,22 @@ router.get('/mem-data/:account', async (req, res) => {
   }
 });
 
+// 根據 id 查詢會員資料
+router.get('/mem-data/by-id/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const query = 'SELECT * FROM m_member WHERE m_member_id = ?';
+    const [member] = await memDB.query(query, [id]);
+
+    if (member.length === 0) {
+      return res.status(404).json({ message: '會員資料不存在' });
+    }
+
+    res.status(200).json({ success: true, memberData: member[0] });
+  } catch (error) {
+    console.error("查詢會員資料時發生錯誤：", error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
 export default router;
