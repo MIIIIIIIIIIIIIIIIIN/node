@@ -73,9 +73,11 @@ router.post("/login", upload.none(), async (req, res) => {
     district: row.m_district,
   };
 
+  // 確保 `account` 包含在回傳的資料中
   output.success = true;
   output.data = {
-    id: row.m_member_id, // 確保 id 被包含在回傳的資料中
+    id: row.m_member_id, 
+    account: row.m_account, // 新增 account 字段
     token: token,
     nickname: row.m_nickname,
     email: row.m_email,

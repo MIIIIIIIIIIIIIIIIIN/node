@@ -376,51 +376,50 @@ app.get("/login", (req, res) => {
 // });
 
 // 登入 暫時新增 11.07 (資料從localStorage改存到session)
-app.post("/login", upload.none(), async (req, res) => {
+// 假設在 /login 路由處理函數中
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
   const output = {
     success: false,
     code: 0,
     error: "",
   };
-  let { email, password } = req.body;
-  email = email ? email.trim() : "";
-  password = password ? password.trim() : "";
 
+  // 驗證 email 和 password 的存在性
   if (!email || !password) {
+    output.error = "請提供有效的帳號和密碼";
     return res.json(output);
   }
-  // 1. 先確定帳號是不是對的
-  const sql = `SELECT * FROM m_member WHERE m_account=?`;
-  const [rows] = await memDB.query(sql, [email]);
+
+  // 查詢資料庫並確保找到使用者
+  const sql = `SELECT * FROM m_member WHERE m_account = ? OR m_email = ?`;
+  const [rows] = await memDB.query(sql, [email, email]);
   if (!rows.length) {
-    output.code = 400;
+    output.code = 401;
     output.error = "帳號或密碼錯誤";
     return res.json(output);
   }
+
   const row = rows[0];
-  const isPasswordCorrect = password === row.m_password;
+  const isPasswordCorrect = await bcrypt.compare(password, row.m_password);
 
+  // 確認密碼是否正確
   if (!isPasswordCorrect) {
-    output.code = 450;
+    output.code = 403;
     output.error = "帳號或密碼錯誤";
     return res.json(output);
   }
 
-  // 將登入成功的會員資料儲存到 session
-  req.session.admin = {
+  // 登入成功，返回包含 `account` 的資料
+  output.success = true;
+  output.data = {
     id: row.m_member_id,
-    account: row.m_account,
+    account: row.m_account, // 確保這裡返回 account
     nickname: row.m_nickname,
     email: row.m_email,
-    birth: row.m_birth,
-    gender: row.m_gender,
-    location: row.m_location,
-    phone: row.m_phone,
-    icon: row.m_icon,
-    bio: row.m_bio,
   };
-  output.success = true;
-  res.json(output);
+
+  res.json(output); // 確保這裡正確返回包含 `account` 的 response
 });
 
 app.get("/api/check-login", (req, res) => {
