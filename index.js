@@ -10,6 +10,7 @@ import upload from "./utils/upload-imgs.js";
 //引入路由群組
 import admin2Router from "./routes/admin2.js";
 import memberRouter from "./routes/member/member.js";
+import memberRouters from "./routes/member/auth.js";
 
 import fundraiserRouter from "./routes/fundraiser.js";
 import loginRouter from "./routes/member/login.js"; // 引入新的 login.js
@@ -22,7 +23,7 @@ import { fileURLToPath } from "url";
 import path from "path";
 
 //引入資料庫
-// import db from "./utils/connect-mysqls.js";
+import db from "./utils/connect-mysqls.js";
 import memDB from "./routes/member/mem-db.js";
 //引入雜湊工具
 import bcrypt from "bcrypt";
@@ -35,20 +36,37 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// 引入暱稱更新
+import updateNicknameRouter from "./routes/member/update-nickname.js"; 
+import updateIconRouter from "./routes/member/update-icon.js";
+import updateBioRouter from "./routes/member/update-bio.js";
+import updateGenderRouter from "./routes/member/update-gender.js";
+import updateLocationRouter from "./routes/member/update-location.js";
+import updatePasswordRouter from "./routes/member/update-password.js";
+import favoritesRouter from "./routes/member/favorites.js";
+import memberDataRouter from "./routes/member/data.js";
+import checkAuth from "./routes/member/check-auth.js";
+
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 建立 web server 物件
 const app = express();
 
+// 將 bcrypt 替換為 bcryptjs
+// const bcrypt = require("bcryptjs");
+
+
 //註冊樣板引擎
 app.set("view engine", "ejs");
 // 設定 top-level middleware
 const corsOptions = {
   credentials: true,
-  origin: (origin, callback) => {
-    callback(null, true);
-  },
+  // origin: (origin, callback) => {
+  //   callback(null, true);
+  // },
+  origin: "http://localhost:3000",
 };
 app.use(cors(corsOptions));
 app.use(express.urlencoded({ extended: true }));
@@ -57,11 +75,11 @@ app.use(
   session({
     saveUninitialized: false,
     resave: false,
-    secret: "kdhhkffhifaoi",
-    // cookie: {
-    //   maxAge: 1200_000, //session 存活時間 (20分鐘)
-    //   httpOnly: false,
-    // },
+    secret: "kdhhkffhifaoi", // 替換為您的 session 密鑰
+    cookie: {
+      maxAge: 1200_000, // 設定 session 的存活時間（20 分鐘）
+      httpOnly: true, // 確保 Cookie 僅在 HTTP 請求中傳遞
+    },
   })
 );
 
@@ -85,6 +103,18 @@ app.use((req, res, next) => {
 
 // 設置路由
 app.use("/members", memberRouter);
+app.use("/member", memberRouters);
+// 使用新的更新暱稱路由
+app.use("/member", updateNicknameRouter);
+app.use("/member", updateIconRouter);
+app.use("/member", updateBioRouter);
+app.use("/member", updateGenderRouter);
+app.use("/member", updateLocationRouter);
+app.use("/member", updatePasswordRouter);
+app.use("/member", memberDataRouter);
+app.use("/member", checkAuth);
+
+
 
 //*********************************路由 *********************************/
 // 路由定義, callback 為路由處理器
@@ -105,7 +135,7 @@ app.use("/member", loginRouter); // 使用新的登入路由
 // 其他路由及頁面
 
 // 使用註冊路由
-app.use("/member", authRouter); // 使用 /member 作為路徑前端
+app.use("/member", authRouter); // 使用 /member 作為註冊請求路徑前端
 app.use("/fundraiser", fundraiserRouter);
 
 // 註冊處理路由
@@ -237,6 +267,8 @@ app.get("/mem-data", (req, res) => {
   res.json(req.session);
 });
 
+
+
 app.get("/test", async (req, res) => {
   const sql = "SELECT * FROM m_member WHERE m_member_id BETWEEN 1 and 20 "; //從第4筆開始取6筆資料
   const [rows, field] = await db.query(sql);
@@ -344,50 +376,50 @@ app.get("/login", (req, res) => {
 // });
 
 // 登入 暫時新增 11.07 (資料從localStorage改存到session)
-app.post("/login", upload.none(), async (req, res) => {
+// 假設在 /login 路由處理函數中
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
   const output = {
     success: false,
     code: 0,
     error: "",
   };
-  let { email, password } = req.body;
-  email = email ? email.trim() : "";
-  password = password ? password.trim() : "";
 
+  // 驗證 email 和 password 的存在性
   if (!email || !password) {
+    output.error = "請提供有效的帳號和密碼";
     return res.json(output);
   }
-  // 1. 先確定帳號是不是對的
-  const sql = `SELECT * FROM m_member WHERE m_account=?`;
-  const [rows] = await memDB.query(sql, [email]);
+
+  // 查詢資料庫並確保找到使用者
+  const sql = `SELECT * FROM m_member WHERE m_account = ? OR m_email = ?`;
+  const [rows] = await memDB.query(sql, [email, email]);
   if (!rows.length) {
-    output.code = 400;
+    output.code = 401;
     output.error = "帳號或密碼錯誤";
     return res.json(output);
   }
+
   const row = rows[0];
-  const isPasswordCorrect = password === row.m_password;
+  const isPasswordCorrect = await bcrypt.compare(password, row.m_password);
 
+  // 確認密碼是否正確
   if (!isPasswordCorrect) {
-    output.code = 450;
+    output.code = 403;
     output.error = "帳號或密碼錯誤";
     return res.json(output);
   }
 
-  // 將登入成功的會員資料儲存到 session
-  req.session.admin = {
+  // 登入成功，返回包含 `account` 的資料
+  output.success = true;
+  output.data = {
     id: row.m_member_id,
-    account: row.m_account,
+    account: row.m_account, // 確保這裡返回 account
     nickname: row.m_nickname,
     email: row.m_email,
-    birth: row.m_birth,
-    gender: row.m_gender,
-    location: row.m_location,
-    phone: row.m_phone,
-    icon: row.m_icon,
   };
-  output.success = true;
-  res.json(output);
+
+  res.json(output); // 確保這裡正確返回包含 `account` 的 response
 });
 
 app.get("/api/check-login", (req, res) => {
@@ -504,13 +536,16 @@ app.use(
   "/project-images",
   express.static(path.join(__dirname, "public/project-images"))
 );
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // ******* 404 頁面要在所有的路由後面 **************************
 // 404 頁面
 app.use((req, res) => {
   res.status(404).send("<h1>走錯路了</h1>");
 });
 
-const port = process.env.WEB_PORT || 3005;
+
+
+const port = process.env.WEB_PORT || 3002;
 
 app.listen(port, () => {
   console.log(`Server 啟動於 ${port}`);
