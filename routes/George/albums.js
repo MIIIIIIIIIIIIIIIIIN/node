@@ -12,7 +12,7 @@ const JAMENDO_API_KEY = "1c0b1d31";
 router.get("/albums", async (req, res) => {
   const sql = "SELECT * FROM pp_albums ORDER BY p_albums_id DESC";
   const [rows] = await db.query(sql);
-  res.json({rows});
+  res.json({ rows });
 });
 
 router.get("/albums/:pid", async (req, res) => {
@@ -58,7 +58,6 @@ router.get("/getImages/:pid", async (req, res) => {
     res.json({ success: false, message: "無法取得圖片" });
   }
 });
-
 
 router.get("/getImages/:artist/:pid", async (req, res) => {
   const { artist, pid } = req.params;
@@ -112,14 +111,11 @@ router.get("/youmaylike/:pid", async (req, res) => {
   `;
     const [youmaylike] = await db.query(otheryoumaylikequery, [pid, pid]);
     res.json(youmaylike);
-
   } catch (error) {
     console.error(error);
     res.status(500).send("Error fetching albums");
   }
 });
-
-
 
 // genres fetching
 router.get("/getGenres", async (req, res) => {
@@ -186,7 +182,7 @@ WHERE
 // Cart
 // 加入購物車 API 路由
 router.post("/addToCart", async (req, res) => {
-  console.log("收到的請求資料：", req.body);
+  // console.log("收到的請求資料：", req.body);
   const { commodity_id, albumId, userId, pic, quantity, price } = req.body;
 
   if (!price || !quantity || !pic || !albumId || !userId) {
@@ -207,26 +203,45 @@ router.post("/addToCart", async (req, res) => {
 
       if (isNaN(newQuantity)) {
         console.error("Error: Invalid quantity calculation.");
-        return res.status(400).json({ message: "Invalid quantity calculation" });
+        return res
+          .status(400)
+          .json({ message: "Invalid quantity calculation" });
       }
 
       const updateQuery = `UPDATE pp_carts SET p_cart_quantity = ?, p_cart_price = ? WHERE p_albums_id = ? AND user_id = ?`;
       // console.log("Executing Update Query:", updateQuery, [newQuantity, price, albumId, userId]);
 
-      const [updateResults] = await db.query(updateQuery, [newQuantity, price, albumId, userId]);
+      const [updateResults] = await db.query(updateQuery, [
+        newQuantity,
+        price,
+        albumId,
+        userId,
+      ]);
       // console.log("Update Results:", updateResults);
-      res.status(200).json({ message: "Item quantity updated in cart", data: updateResults });
+      res.status(200).json({
+        message: "Item quantity updated in cart",
+        data: updateResults,
+      });
     } else {
       // 專輯不在購物車中，插入新紀錄
       const insertQuery = `INSERT INTO pp_carts (p_commodity_id, p_albums_id, user_id, p_cart_created_at, p_cart_img_filename, p_cart_quantity, p_cart_price)
       VALUES (?, ?, ?, NOW(), ?, ?, ?)`;
 
-      const insertValues = [commodity_id, albumId, userId, pic, quantity, price];
+      const insertValues = [
+        commodity_id,
+        albumId,
+        userId,
+        pic,
+        quantity,
+        price,
+      ];
       // console.log("Executing Insert Query:", insertQuery, insertValues);
 
       const [insertResults] = await db.query(insertQuery, insertValues);
       // console.log("Insert Results:", insertResults);
-      res.status(200).json({ message: "Item added to cart", data: insertResults });
+      res
+        .status(200)
+        .json({ message: "Item added to cart", data: insertResults });
     }
   } catch (error) {
     console.error("Database Error:", error);
@@ -234,6 +249,112 @@ router.post("/addToCart", async (req, res) => {
   }
 });
 
+// delete cart
+router.delete("/deleteFromCart/:id", async (req, res) => {
+  console.log("路由參數: ", req.params); // 檢查路由參數
+  const { id } = req.params;
+
+  try {
+    const sql = "DELETE FROM pp_carts WHERE p_albums_id = ?";
+    const [result] = await db.query(sql, [id]);
+    if (result.affectedRows) {
+      res.json({ success: true, message: "商品已刪除" });
+    } else {
+      res.status(404).json({ success: false, message: "商品不存在" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "伺服器錯誤" });
+  }
+});
+
+// clean cart
+router.delete("/cleanFromCart/:id", async (req, res) => {
+  const { id} = req.params;
+  const { pid } = req.query;
+  console.log("ID: ", id, "PID: ", pid);
+  const pidArray = pid.split(',');
+
+  if (!pid || pid.length === 0) {
+    return res.status(400).json({ success: false, message: "沒有提供 pid" });
+  }
+
+  try {
+    const sql = "DELETE FROM pp_carts WHERE user_id = ? AND p_albums_id IN (?)";
+    const [result] = await db.query(sql, [id, pidArray]);
+    if (result.affectedRows) {
+      res.json({ success: true, message: "清楚購物車完成" });
+    } else {
+      res.status(404).json({ success: false, message: "商品不存在" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "伺服器錯誤" });
+  }
+});
+
+// 寫入訂單爹斯
+router.post("/addToOrder", async (req, res) => {
+  // console.log("收到的訂單資料：", req.body);
+  const { orderData, orderItemsData } = req.body;
+  const {
+    userId,
+    totalAmount,
+    shippingAddress,
+    shippingFee,
+    paymentStatus,
+    orderStatus,
+    phone,
+    email,
+    orderNumber,
+    createdAt,
+    updatedAt,
+  } = orderData;
+
+  try {
+    // 訂單本人
+    const sqlOrder = `
+      INSERT INTO pp_orders 
+      (user_id, p_order_status, p_order_total_amount, p_order_shipping_address, p_order_shipping_fee, 
+      p_order_payment_status, p_order_orderNumber, p_order_created_at, p_order_updated_at, 
+      p_order_phone, p_order_email) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const insertOrder = [
+      userId,
+      orderStatus,
+      totalAmount,
+      shippingAddress,
+      shippingFee,
+      paymentStatus,
+      orderNumber,
+      createdAt,
+      updatedAt,
+      phone,
+      email,
+    ];
+    const [orderRow] = await db.query(sqlOrder, insertOrder);
+    //訂單項目
+    const orderId = orderRow.insertId; // 關聯
+    const sqlOrderItems = `
+    INSERT INTO pp_order_items (p_order_id, p_albums_id, p_order_items_totalAmount)
+    VALUES (?, ?, ?)`;
+    const orderItemsPromises = orderItemsData.map((item) => {
+      const { albumsId, totalAmount } = item;
+      return db.query(sqlOrderItems, [orderId, albumsId, totalAmount]);
+    });
+    await Promise.all(orderItemsPromises);
+
+    res.status(200).json({ message: "Item added to order", data: orderRow });
+  } catch (error) {
+    console.error("Database Error:", error);
+    return res.status(500).json({ message: "Database error", error });
+  }
+});
+
+// 讀取訂單爹斯
+router.get("/fetchOrders", (req, res) => {
+  const query = `SELECT * FROM pp_order`
+});
 
 // get data from mem db
 router.get("/getMem", async (req, res) => {
@@ -259,33 +380,32 @@ router.get("/getMem/:urid", async (req, res) => {
   }
 });
 
-
 const checkMember = async (req, res, next) => {
   try {
     // 取得會員資料
-    const response = await fetch('http://localhost:3005/mem-data', {
+    const response = await fetch("http://localhost:3005/mem-data", {
       headers: {
-        'Cookie': req.headers.cookie // 轉發 cookie
+        Cookie: req.headers.cookie, // 轉發 cookie
       },
-      credentials: 'include'
+      credentials: "include",
     });
 
     if (!response.ok) {
-      return res.status(401).json({ error: '請先登入' });
+      return res.status(401).json({ error: "請先登入" });
     }
 
     const memberData = await response.json();
-    
+
     if (!memberData.admin) {
-      return res.status(401).json({ error: '請先登入' });
+      return res.status(401).json({ error: "請先登入" });
     }
 
     // 將會員資料存到 req 中供後續路由使用
     req.memberData = memberData;
     next();
   } catch (error) {
-    console.error('驗證會員失敗:', error);
-    res.status(500).json({ error: '伺服器錯誤' });
+    console.error("驗證會員失敗:", error);
+    res.status(500).json({ error: "伺服器錯誤" });
   }
 };
 
@@ -369,22 +489,22 @@ router.get("/playlist/:playlistId", async (req, res) => {
 });
 
 //jamendo api for music
-router.get("/tracks", async (req, res) => {
-  try {
-    const response = await axios.get(`${JAMENDO_API_BASE_URL}/tracks`, {
-      params: {
-        client_id: JAMENDO_API_KEY,
-        format: "json",
-        limit: 10,
-        order: "popularity_total",
-      },
-    });
-    res.json(response.data);
-  } catch (error) {
-    console.error("Error fetching tracks:", error.message);
-    res.status(500).json({ error: "Failed to fetch tracks from Jamendo" });
-  }
-});
+// router.get("/tracks", async (req, res) => {
+//   try {
+//     const response = await axios.get(`${JAMENDO_API_BASE_URL}/tracks`, {
+//       params: {
+//         client_id: JAMENDO_API_KEY,
+//         format: "json",
+//         limit: 10,
+//         order: "popularity_total",
+//       },
+//     });
+//     res.json(response.data);
+//   } catch (error) {
+//     console.error("Error fetching tracks:", error.message);
+//     res.status(500).json({ error: "Failed to fetch tracks from Jamendo" });
+//   }
+// });
 
 // router.get('/tracks', (req, res) => {
 //   res.send("Tracks endpoint is working!");
