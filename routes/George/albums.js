@@ -182,18 +182,18 @@ WHERE
 // Cart
 // 加入購物車 API 路由
 router.post("/addToCart", async (req, res) => {
-  // console.log("收到的請求資料：", req.body);
-  const { commodity_id, albumId, userId, pic, quantity, price } = req.body;
+  console.log("收到的請求資料：", req.body);
+  const { f_plan_id, albumId, userId, pic, quantity, price } = req.body;
 
   if (!price || !quantity || !pic || !albumId || !userId) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
   try {
-    const checkQuery = `SELECT p_cart_quantity FROM pp_carts WHERE p_albums_id = ? AND user_id = ?`;
+    const checkQuery = `SELECT p_cart_quantity FROM pp_carts WHERE (p_albums_id = ? OR f_plan_id = ?) AND user_id = ?`;
     // console.log("Executing Check Query:", checkQuery, [albumId, userId]);
 
-    const [rows] = await db.query(checkQuery, [albumId, userId]);
+    const [rows] = await db.query(checkQuery, [albumId, f_plan_id, userId]);
     // console.log("Check Results:", rows);
 
     if (rows && rows.length > 0) {
@@ -208,13 +208,14 @@ router.post("/addToCart", async (req, res) => {
           .json({ message: "Invalid quantity calculation" });
       }
 
-      const updateQuery = `UPDATE pp_carts SET p_cart_quantity = ?, p_cart_price = ? WHERE p_albums_id = ? AND user_id = ?`;
+      const updateQuery = `UPDATE pp_carts SET p_cart_quantity = ?, p_cart_price = ? WHERE (p_albums_id = ? OR f_plan_id = ?) AND user_id = ?`;
       // console.log("Executing Update Query:", updateQuery, [newQuantity, price, albumId, userId]);
 
       const [updateResults] = await db.query(updateQuery, [
         newQuantity,
         price,
         albumId,
+        f_plan_id,
         userId,
       ]);
       // console.log("Update Results:", updateResults);
@@ -224,16 +225,16 @@ router.post("/addToCart", async (req, res) => {
       });
     } else {
       // 專輯不在購物車中，插入新紀錄
-      const insertQuery = `INSERT INTO pp_carts (p_commodity_id, p_albums_id, user_id, p_cart_created_at, p_cart_img_filename, p_cart_quantity, p_cart_price)
-      VALUES (?, ?, ?, NOW(), ?, ?, ?)`;
+      const insertQuery = `INSERT INTO pp_carts (p_albums_id, user_id, p_cart_created_at, p_cart_img_filename, p_cart_quantity, p_cart_price, f_plan_id)
+      VALUES (?, ?, NOW(), ?, ?, ?, ?)`;
 
       const insertValues = [
-        commodity_id,
         albumId,
         userId,
         pic,
         quantity,
         price,
+        f_plan_id,
       ];
       // console.log("Executing Insert Query:", insertQuery, insertValues);
 
@@ -270,10 +271,10 @@ router.delete("/deleteFromCart/:id", async (req, res) => {
 
 // clean cart
 router.delete("/cleanFromCart/:id", async (req, res) => {
-  const { id} = req.params;
+  const { id } = req.params;
   const { pid } = req.query;
   console.log("ID: ", id, "PID: ", pid);
-  const pidArray = pid.split(',');
+  const pidArray = pid.split(",");
 
   if (!pid || pid.length === 0) {
     return res.status(400).json({ success: false, message: "沒有提供 pid" });
@@ -353,7 +354,7 @@ router.post("/addToOrder", async (req, res) => {
 
 // 讀取訂單爹斯
 router.get("/fetchOrders", (req, res) => {
-  const query = `SELECT * FROM pp_order`
+  const query = `SELECT * FROM pp_order`;
 });
 
 // get data from mem db
