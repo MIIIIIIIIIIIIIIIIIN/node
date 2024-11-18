@@ -38,7 +38,6 @@ router.post("/login", upload.none(), async (req, res) => {
   }
 
   const row = rows[0];
-
   // 使用 bcrypt.compare 比較密碼
   const isPasswordCorrect = await bcrypt.compare(password, row.m_password);
 
