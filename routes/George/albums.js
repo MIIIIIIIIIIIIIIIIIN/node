@@ -180,73 +180,217 @@ WHERE
 });
 
 // Cart
-// 加入購物車 API 路由
+// 加入購物車 API 路由 01
+// router.post("/addToCart", async (req, res) => {
+//   console.log("收到的請求資料：", req.body);
+//   const { f_plan_id, albumId, userId, pic, quantity, price } = req.body;
+
+//   if (!price || !quantity || !pic || !albumId || !userId) {
+//     return res.status(400).json({ message: "Missing required fields" });
+//   }
+
+//   try {
+//     const checkQuery = `SELECT p_cart_quantity FROM pp_carts WHERE (p_albums_id = ? OR f_plan_id = ?) AND user_id = ?`;
+//     console.log("Executing Check Query:", checkQuery, [albumId, userId]);
+
+//     const [rows] = await db.query(checkQuery, [albumId, f_plan_id, userId]);
+//     // console.log("Check Results:", rows);
+
+//     if (rows && rows.length > 0) {
+//       // 從嵌套結構中取出 p_cart_quantity
+//       const currentQuantity = rows[0].p_cart_quantity;
+//       const newQuantity = parseInt(currentQuantity) + parseInt(quantity);
+
+//       if (isNaN(newQuantity)) {
+//         console.error("Error: Invalid quantity calculation.");
+//         return res
+//           .status(400)
+//           .json({ message: "Invalid quantity calculation" });
+//       }
+
+//       const updateQuery = `UPDATE pp_carts SET p_cart_quantity = ?, p_cart_price = ? WHERE (p_albums_id = ? OR f_plan_id = ?) AND user_id = ?`;
+//       // console.log("Executing Update Query:", updateQuery, [newQuantity, price, albumId, userId]);
+
+//       const [updateResults] = await db.query(updateQuery, [
+//         newQuantity,
+//         price,
+//         albumId,
+//         f_plan_id,
+//         userId,
+//       ]);
+//       // console.log("Update Results:", updateResults);
+//       res.status(200).json({
+//         message: "Item quantity updated in cart",
+//         data: updateResults,
+//       });
+//     } else {
+//       // 專輯不在購物車中，插入新紀錄
+//       const insertQuery = `INSERT INTO pp_carts (p_albums_id, user_id, p_cart_created_at, p_cart_img_filename, p_cart_quantity, p_cart_price, f_plan_id)
+//       VALUES (?, ?, NOW(), ?, ?, ?, ?)`;
+
+//       const insertValues = [
+//         albumId,
+//         userId,
+//         pic,
+//         quantity,
+//         price,
+//         f_plan_id,
+//       ];
+//       // console.log("Executing Insert Query:", insertQuery, insertValues);
+
+//       const [insertResults] = await db.query(insertQuery, insertValues);
+//       // console.log("Insert Results:", insertResults);
+//       res
+//         .status(200)
+//         .json({ message: "Item added to cart", data: insertResults });
+//     }
+//   } catch (error) {
+//     console.error("Database Error:", error);
+//     return res.status(500).json({ message: "Database error", error });
+//   }
+// });
+
+// 加入購物車 API 路由 03
 router.post("/addToCart", async (req, res) => {
   console.log("收到的請求資料：", req.body);
-  const { f_plan_id, albumId, userId, pic, quantity, price } = req.body;
-
-  if (!price || !quantity || !pic || !albumId || !userId) {
-    return res.status(400).json({ message: "Missing required fields" });
-  }
-
+  
   try {
-    const checkQuery = `SELECT p_cart_quantity FROM pp_carts WHERE (p_albums_id = ? OR f_plan_id = ?) AND user_id = ?`;
-    // console.log("Executing Check Query:", checkQuery, [albumId, userId]);
+    // 處理多筆資料
+    if (Array.isArray(req.body)) {
+      // 使用 Promise.all 來等待所有項目處理完成
+      await Promise.all(req.body.map(async (item) => {
+        item.pic = item.pic.trim();
+        const { f_plan_id, albumId, userId, pic, quantity, price } = item;
 
-    const [rows] = await db.query(checkQuery, [albumId, f_plan_id, userId]);
-    // console.log("Check Results:", rows);
+        // 檢查必要欄位
+        if (!userId || !quantity || !price) {
+          throw new Error("Missing required fields");
+        }
 
-    if (rows && rows.length > 0) {
-      // 從嵌套結構中取出 p_cart_quantity
-      const currentQuantity = rows[0].p_cart_quantity;
-      const newQuantity = parseInt(currentQuantity) + parseInt(quantity);
+        // 查詢是否已存在
+        const checkQuery = `SELECT p_cart_quantity FROM pp_carts WHERE (p_albums_id = ? OR f_plan_id = ?) AND user_id = ?`;
+        const [rows] = await db.query(checkQuery, [albumId, f_plan_id, userId]);
 
-      if (isNaN(newQuantity)) {
-        console.error("Error: Invalid quantity calculation.");
-        return res
-          .status(400)
-          .json({ message: "Invalid quantity calculation" });
+        if (rows && rows.length > 0) {
+          // 更新既有項目
+          const currentQuantity = rows[0].p_cart_quantity;
+          const newQuantity = parseInt(currentQuantity) + parseInt(quantity);
+
+          if (isNaN(newQuantity)) {
+            throw new Error("Invalid quantity calculation");
+          }
+
+          const updateQuery = `
+            UPDATE pp_carts 
+            SET p_cart_quantity = ?, 
+                p_cart_price = ? 
+            WHERE (p_albums_id = ? OR f_plan_id = ?) AND user_id = ?
+          `;
+          await db.query(updateQuery, [
+            newQuantity,
+            price,
+            albumId,
+            f_plan_id,
+            userId,
+          ]);
+
+        } else {
+          // 插入新項目
+          const insertQuery = `
+            INSERT INTO pp_carts 
+            (p_albums_id, f_plan_id, user_id, p_cart_created_at, p_cart_img_filename, p_cart_quantity, p_cart_price)
+            VALUES (?, ?, ?, NOW(), ?, ?, ?)
+          `;
+          await db.query(insertQuery, [
+            albumId, 
+            f_plan_id, 
+            userId, 
+            pic, 
+            quantity, 
+            price
+          ]);
+        }
+      }));
+
+      res.status(200).json({
+        success: true,
+        message: "All items processed successfully"
+      });
+
+    } else {
+      // 處理單筆資料
+      const { f_plan_id, albumId, userId, pic, quantity, price } = req.body;
+      
+      // 檢查必要欄位
+      if (!userId || !quantity || !price) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Missing required fields" 
+        });
       }
 
-      const updateQuery = `UPDATE pp_carts SET p_cart_quantity = ?, p_cart_price = ? WHERE (p_albums_id = ? OR f_plan_id = ?) AND user_id = ?`;
-      // console.log("Executing Update Query:", updateQuery, [newQuantity, price, albumId, userId]);
+      const checkQuery = `SELECT p_cart_quantity FROM pp_carts WHERE (p_albums_id = ? OR f_plan_id = ?) AND user_id = ?`;
+      const [rows] = await db.query(checkQuery, [albumId, f_plan_id, userId]);
 
-      const [updateResults] = await db.query(updateQuery, [
-        newQuantity,
-        price,
-        albumId,
-        f_plan_id,
-        userId,
-      ]);
-      // console.log("Update Results:", updateResults);
-      res.status(200).json({
-        message: "Item quantity updated in cart",
-        data: updateResults,
-      });
-    } else {
-      // 專輯不在購物車中，插入新紀錄
-      const insertQuery = `INSERT INTO pp_carts (p_albums_id, user_id, p_cart_created_at, p_cart_img_filename, p_cart_quantity, p_cart_price, f_plan_id)
-      VALUES (?, ?, NOW(), ?, ?, ?, ?)`;
+      if (rows && rows.length > 0) {
+        const currentQuantity = rows[0].p_cart_quantity;
+        const newQuantity = parseInt(currentQuantity) + parseInt(quantity);
 
-      const insertValues = [
-        albumId,
-        userId,
-        pic,
-        quantity,
-        price,
-        f_plan_id,
-      ];
-      // console.log("Executing Insert Query:", insertQuery, insertValues);
+        if (isNaN(newQuantity)) {
+          return res.status(400).json({ 
+            success: false,
+            message: "Invalid quantity calculation" 
+          });
+        }
 
-      const [insertResults] = await db.query(insertQuery, insertValues);
-      // console.log("Insert Results:", insertResults);
-      res
-        .status(200)
-        .json({ message: "Item added to cart", data: insertResults });
+        const updateQuery = `
+          UPDATE pp_carts 
+          SET p_cart_quantity = ?, 
+              p_cart_price = ? 
+          WHERE (p_albums_id = ? OR f_plan_id = ?) AND user_id = ?
+        `;
+        await db.query(updateQuery, [
+          newQuantity,
+          price,
+          albumId,
+          f_plan_id,
+          userId,
+        ]);
+
+        res.status(200).json({
+          success: true,
+          message: "Item quantity updated in cart",
+          data: { albumId, f_plan_id, newQuantity, price },
+        });
+      } else {
+        const insertQuery = `
+          INSERT INTO pp_carts 
+          (p_albums_id, f_plan_id, user_id, p_cart_created_at, p_cart_img_filename, p_cart_quantity, p_cart_price)
+          VALUES (?, ?, ?, NOW(), ?, ?, ?)
+        `;
+        const [insertResults] = await db.query(insertQuery, [
+          albumId,
+          f_plan_id,
+          userId,
+          pic,
+          quantity,
+          price
+        ]);
+
+        res.status(200).json({
+          success: true,
+          message: "Item added to cart",
+          data: insertResults,
+        });
+      }
     }
   } catch (error) {
     console.error("Database Error:", error);
-    return res.status(500).json({ message: "Database error", error });
+    return res.status(500).json({ 
+      success: false,
+      message: "Operation failed",
+      error: error.message 
+    });
   }
 });
 
