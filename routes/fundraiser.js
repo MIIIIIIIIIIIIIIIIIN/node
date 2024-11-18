@@ -1,9 +1,255 @@
 import express from "express";
-const router = express.Router();
-
-// 資料庫使用，使用原本的mysql2 + sql
+import multer from "multer";
 import db from "../utils/connect-mysqls.js";
-// import memDB from "./member/mem-db";
+import path from 'path';
+import cors from "cors";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import fs from 'fs';
+
+const router = express.Router();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// 檔案上傳路徑配置
+const frontendPublicPath = path.resolve('/Users/User/Desktop/react/music-next-mfee58/public');
+
+// 定義所有需要的路徑
+const paths = {
+  video: path.join(frontendPublicPath, 'Liam/videos'),
+  image: path.join(frontendPublicPath, 'Liam/images/cover'),
+  header: path.join(frontendPublicPath, 'Liam/images/header')
+};
+
+// 建立所有必要的目錄
+Object.values(paths).forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log(`Created directory: ${dir}`);
+  }
+});
+
+// CORS 設定
+router.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
+
+// 檔案存儲配置
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    let uploadPath;
+    switch(file.fieldname) {
+      case 'f_project_picture':
+        uploadPath = paths.video;
+        break;
+      case 'top':
+        uploadPath = paths.image;
+        break;
+      case 'header':
+        uploadPath = paths.header;
+        break;
+      default:
+        uploadPath = paths.image;
+    }
+    console.log(`Uploading ${file.fieldname} to: ${uploadPath}`);
+    cb(null, uploadPath);
+  },
+  filename: function(req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
+    console.log(`Generated filename: ${filename}`);
+    cb(null, filename);
+  }
+});
+
+// 檔案過濾器
+const fileFilter = function(req, file, cb) {
+  if (file.fieldname === 'f_project_picture') {
+    if (!file.mimetype.startsWith('video/')) {
+      return cb(new Error('請上傳視頻文件'), false);
+    }
+    const maxVideoSize = 200 * 1024 * 1024; // 200MB
+    if (file.size > maxVideoSize) {
+      return cb(new Error('視頻文件不能超過200MB'), false);
+    }
+  } else if (file.fieldname === 'top' || file.fieldname === 'header') {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('請上傳圖片文件'), false);
+    }
+    const maxImageSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxImageSize) {
+      return cb(new Error('圖片文件不能超過5MB'), false);
+    }
+  }
+  cb(null, true);
+};
+
+// Multer 配置
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 200 * 1024 * 1024
+  }
+});
+
+// 輔助函數：產生資料庫路徑
+const getDbPath = (file, type) => {
+  const filename = file.filename;
+  switch(type) {
+    case 'video':
+      return `/Liam/videos/${filename}`;
+    case 'image':
+      return `/Liam/images/cover/${filename}`;
+    case 'header':
+      return `/Liam/images/header/${filename}`;
+    default:
+      return '';
+  }
+};
+
+// 檔案上傳日誌
+const logFileUpload = (file, destination) => {
+  console.log('File Upload Details:');
+  console.log(`Original name: ${file.originalname}`);
+  console.log(`Stored at: ${destination}`);
+  console.log(`Size: ${file.size} bytes`);
+  console.log(`Mime type: ${file.mimetype}`);
+};
+
+// 建立專案路由
+router.post('/projects/create', (req, res) => {
+  upload.fields([
+    { name: 'f_project_picture', maxCount: 1 },
+    { name: 'top', maxCount: 1 },
+    { name: 'header', maxCount: 1 }
+  ])(req, res, async function(err) {
+    if (err) {
+      console.error('Upload error:', err);
+      return res.status(400).json({
+        success: false,
+        message: err.message
+      });
+    }
+
+    let connection;
+    try {
+      // 檢查必要欄位
+      const requiredFields = [
+        'f_project_name',
+        'f_tag',
+        'f_project_amount',
+        'f_project_title',
+        'f_project_content'
+      ];
+
+      const missingFields = requiredFields.filter(field => !req.body[field]);
+      if (missingFields.length > 0) {
+        throw new Error(`缺少必要欄位: ${missingFields.join(', ')}`);
+      }
+
+      // 檢查檔案上傳
+      if (!req.files['f_project_picture'] || !req.files['top'] || !req.files['header']) {
+        throw new Error('請上傳所有必要的文件（影片、封面圖片和Header圖片）');
+      }
+
+      // 記錄檔案上傳資訊
+      Object.values(req.files).forEach(files => {
+        files.forEach(file => {
+          logFileUpload(file, file.destination);
+        });
+      });
+
+      connection = await db.getConnection();
+      await connection.beginTransaction();
+
+      const {
+        f_project_name,
+        f_tag,
+        f_project_amount,
+        f_project_title,
+        f_project_content,
+      } = req.body;
+
+      // 取得檔案資訊
+      const videoFile = req.files['f_project_picture'][0];
+      const imageFile = req.files['top'][0];
+      const headerFile = req.files['header'][0];
+
+      // 產生資料庫路徑
+      const videoPath = getDbPath(videoFile, 'video');
+      const imagePath = getDbPath(imageFile, 'image');
+      const headerPath = getDbPath(headerFile, 'header');
+
+      // 寫入資料庫
+      const [result] = await connection.execute(
+        `INSERT INTO f_project_list (
+          f_project_name,
+          f_tag,
+          f_project_amount,
+          f_project_title,
+          f_project_content,
+          video,
+          f_project_picture,   
+          top
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          f_project_name,
+          f_tag,
+          f_project_amount,
+          f_project_title,
+          f_project_content,
+          videoPath,
+          imagePath,
+          headerPath
+        ]
+      );
+
+      await connection.commit();
+
+      res.json({
+        success: true,
+        message: '專案創建成功',
+        project: {
+          id: result.insertId,
+          f_project_name,
+          f_tag,
+          f_project_amount,
+          f_project_title,
+          f_project_content,
+          video: videoPath,
+          f_project_picture: imagePath,
+          top: headerPath
+        }
+      });
+
+    } catch (error) {
+      if (connection) {
+        await connection.rollback();
+      }
+      console.error('Database error:', error);
+      res.status(500).json({
+        success: false,
+        message: '創建專案失敗',
+        error: error.message
+      });
+    } finally {
+      if (connection) {
+        connection.release();
+      }
+    }
+  });
+});
+
+
+
+
+
+
+
+
+
 
 
 const checkMember = async (req, res, next) => {
@@ -133,73 +379,177 @@ router.get("/message/:project", async (req, res) => {
 //收藏
 
 
-
-
-router.get('/favorites/check/:projectId', checkMember, async (req, res) => {
+router.get('/favorites/check/:projectId/:memberId', async (req, res) => {
   try {
-    const { projectId } = req.params;
-    const memberId = req.memberData.admin.id; // 從驗證後的會員資料取得ID
+    const { projectId, memberId } = req.params;
+
+    // 檢查參數是否存在
+    if (!projectId || !memberId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '缺少必要參數'
+      });
+    }
+
+    // 先檢查會員和專案是否存在
+    const [memberExists] = await db.query(
+      'SELECT 1 FROM m_member WHERE m_member_id = ?',
+      [memberId]
+    );
+
+    const [projectExists] = await db.query(
+      'SELECT 1 FROM f_project_list WHERE f_project_id  = ?',
+      [projectId]
+    );
+
+    if (memberExists.length === 0 || projectExists.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: '會員或專案不存在'
+      });
+    }
 
     const [rows] = await db.query(
-      'SELECT * FROM m_favorite WHERE m_member_id = ? AND m_project_id = ?',
+      'SELECT 1 FROM m_favorite WHERE m_member_id = ? AND m_project_id = ?',
       [memberId, projectId]
     );
 
-    res.json({ isFavorite: rows.length > 0 });
+    res.json({ 
+      success: true,
+      isFavorite: rows.length > 0 
+    });
+
   } catch (error) {
     console.error('檢查收藏狀態失敗:', error);
-    res.status(500).json({ error: '伺服器錯誤' });
+    res.status(500).json({ 
+      success: false, 
+      error: '伺服器錯誤' 
+    });
   }
 });
-// 移除收藏
-router.delete('/favorites/remove/:projectId', checkMember, async (req, res) => {
-  try {
-    const { projectId } = req.params;
-    const memberId = req.memberData.admin.id;
 
+// 新增收藏
+router.post('/favorites/add/:projectId/:memberId', async (req, res) => {
+  const conn = await db.getConnection();
+  
+  try {
+    await conn.beginTransaction();
+    
+    const { projectId, memberId } = req.params;
+
+    // 檢查參數
+    if (!projectId || !memberId) {
+      await conn.rollback();
+      return res.status(400).json({ 
+        success: false, 
+        error: '缺少必要參數' 
+      });
+    }
+
+    // 檢查會員是否存在
+    const [memberExists] = await conn.query(
+      'SELECT 1 FROM m_member WHERE m_member_id = ?',
+      [memberId]
+    );
+
+    if (memberExists.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({ 
+        success: false, 
+        error: '會員不存在' 
+      });
+    }
+
+    // 檢查專案是否存在
+    const [projectExists] = await conn.query(
+      'SELECT 1 FROM f_project_list WHERE f_project_id  = ?',
+      [projectId]
+    );
+
+    if (projectExists.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({ 
+        success: false, 
+        error: '專案不存在' 
+      });
+    }
+
+    // 檢查是否已經收藏
+    const [existing] = await conn.query(
+      'SELECT 1 FROM m_favorite WHERE m_member_id = ? AND m_project_id = ?',
+      [memberId, projectId]
+    );
+
+    if (existing.length > 0) {
+      await conn.rollback();
+      return res.status(400).json({ 
+        success: false, 
+        error: '已經收藏過此專案' 
+      });
+    }
+
+    // 新增收藏記錄
+    await conn.query(
+      'INSERT INTO m_favorite (m_member_id, m_project_id, m_create_time) VALUES (?, ?, NOW())',
+      [memberId, projectId]
+    );
+
+    await conn.commit();
+
+    res.json({ 
+      success: true,
+      message: '收藏成功' 
+    });
+
+  } catch (error) {
+    await conn.rollback();
+    console.error('新增收藏失敗:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '伺服器錯誤' 
+    });
+  } finally {
+    conn.release();
+  }
+});
+
+// 移除收藏
+router.delete('/favorites/remove/:projectId/:memberId', async (req, res) => {
+  try {
+    const { projectId, memberId } = req.params;
+
+    // 檢查參數
+    if (!projectId || !memberId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '缺少必要參數' 
+      });
+    }
+
+    // 檢查並刪除收藏
     const [result] = await db.query(
       'DELETE FROM m_favorite WHERE m_member_id = ? AND m_project_id = ?',
       [memberId, projectId]
     );
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: '找不到收藏記錄' });
+      return res.status(404).json({ 
+        success: false, 
+        error: '找不到收藏記錄' 
+      });
     }
 
-    res.json({ message: '成功移除收藏' });
+    res.json({ 
+      success: true,
+      message: '成功移除收藏' 
+    });
+
   } catch (error) {
     console.error('移除收藏失敗:', error);
-    res.status(500).json({ error: '伺服器錯誤' });
-  }
-
-});
-
-// 新增收藏
-router.post('/favorites/add/:projectId', checkMember, async (req, res) => {
-  try {
-    const { projectId } = req.params;
-    const memberId = req.memberData.admin.id;
-
-    // 檢查是否已經收藏
-    const [existing] = await db.query(
-      'SELECT * FROM m_favorite WHERE m_member_id = ? AND m_project_id = ?',
-      [memberId, projectId]
-    );
-
-    if (existing.length > 0) {
-      return res.status(400).json({ error: '已經收藏過了' });
-    }
-
-    // 新增收藏記錄
-    await db.query(
-      'INSERT INTO m_favorite (m_member_id, m_project_id, m_create_time) VALUES (?, ?, NOW())',
-      [memberId, projectId]
-    );
-
-    res.json({ message: '收藏成功' });
-  } catch (error) {
-    console.error('新增收藏失敗:', error);
-    res.status(500).json({ error: '伺服器錯誤' });
+    res.status(500).json({ 
+      success: false, 
+      error: '伺服器錯誤' 
+    });
   }
 });
 // 留言

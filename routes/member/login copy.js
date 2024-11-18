@@ -2,14 +2,10 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import upload from "../../utils/upload-imgs.js";
-import memDB from "./mem-db.js";
-import dotenv from "dotenv";
-
-dotenv.config({ path: "./dev.env" }); // 指定載入 dev.env 檔案
+import upload from "../../utils/upload-imgs.js"; // 根據實際位置調整
+import memDB from "./mem-db.js"; // 引入資料庫連接
 
 const router = express.Router();
-const JWT_SECRET_KEY = process.env.JWT_KEY; // 從 dev.env 中讀取 JWT_KEY
 
 router.post("/login", upload.none(), async (req, res) => {
   const output = {
@@ -17,14 +13,11 @@ router.post("/login", upload.none(), async (req, res) => {
     code: 0,
     error: "",
   };
-
   let { email, password } = req.body;
   email = email ? email.trim() : "";
   password = password ? password.trim() : "";
 
   if (!email || !password) {
-    output.code = 400;
-    output.error = "請提供有效的帳號和密碼";
     return res.json(output);
   }
 
@@ -32,32 +25,23 @@ router.post("/login", upload.none(), async (req, res) => {
   const sql = `SELECT * FROM m_member WHERE m_account=? OR m_email=?`;
   const [rows] = await memDB.query(sql, [email, email]);
   if (!rows.length) {
-    output.code = 401;
+    output.code = 400;
     output.error = "帳號或密碼錯誤";
     return res.json(output);
   }
 
   const row = rows[0];
+  
   // 使用 bcrypt.compare 比較密碼
   const isPasswordCorrect = await bcrypt.compare(password, row.m_password);
 
   if (!isPasswordCorrect) {
-    output.code = 403;
+    output.code = 450;
     output.error = "帳號或密碼錯誤";
     return res.json(output);
   }
 
-  // 成功登入後，生成 JWT token
-  const token = jwt.sign(
-    {
-      id: row.m_member_id,
-      account: row.m_account,
-      email: row.m_email,
-    },
-    JWT_SECRET_KEY, // 使用從 dev.env 中讀取的密鑰
-    { expiresIn: "1h" }
-  );
-
+  // 將登入成功的會員資料儲存到 session
   req.session.admin = {
     id: row.m_member_id,
     account: row.m_account,
@@ -71,17 +55,8 @@ router.post("/login", upload.none(), async (req, res) => {
     bio: row.m_bio,
     district: row.m_district,
   };
-
-  // 確保 `account` 包含在回傳的資料中
+  
   output.success = true;
-  output.data = {
-    id: row.m_member_id, 
-    account: row.m_account, // 新增 account 字段
-    token: token,
-    nickname: row.m_nickname,
-    email: row.m_email,
-  };
-
   res.json(output);
 });
 
