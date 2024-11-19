@@ -4,10 +4,10 @@ const router = express.Router();
 
 // Create the connection pool
 const pool = mysql2.createPool({
-  host: process.env.DB_HOST || "127.0.0.1",
+  host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASS || "P@ssw0rd",
-  database: process.env.DB_NAME || "final-sql",
+  database: process.env.DB_NAME || "final-1",
   port: process.env.DB_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
@@ -41,7 +41,7 @@ router.get("/posts", async function (req, res) {
         f_message.*,
         m_member.m_nickname as username,
         m_member.m_icon as userImage,
-        f_project_list.top as coverImage,
+        f_project_list.f_project_picture as coverImage,
         COUNT(DISTINCT f_like.f_like_id) as likes_count,
         COUNT(DISTINCT f_share.f_share_id) as shares_count
       FROM f_message
