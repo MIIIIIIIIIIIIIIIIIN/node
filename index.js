@@ -35,7 +35,6 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
 // 引入暱稱更新
-// import updateNicknameRouter from "./routes/member/update-nickname.js"; 
 // import updateIconRouter from "./routes/member/update-icon.js";
 
 dotenv.config();
