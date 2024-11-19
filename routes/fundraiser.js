@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // 檔案上傳路徑配置
-const frontendPublicPath = path.resolve('/Users/User/Desktop/react/music-next-mfee58/public');
+const frontendPublicPath = path.resolve('/Users/倪敏家/Desktop/react/music-next-mfee58/public');
 
 // 定義所有需要的路徑
 const paths = {

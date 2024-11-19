@@ -41,8 +41,6 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // 引入暱稱更新
-import updateNicknameRouter from "./routes/member/update-nickname.js"; 
-import updateIconRouter from "./routes/member/update-icon.js";
 import updateBioRouter from "./routes/member/update-bio.js";
 import updateGenderRouter from "./routes/member/update-gender.js";
 import updateLocationRouter from "./routes/member/update-location.js";
