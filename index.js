@@ -39,6 +39,7 @@ import dotenv from "dotenv";
 // import updateIconRouter from "./routes/member/update-icon.js";
 
 dotenv.config();
+// console.log("JWT_KEY is:", process.env.JWT_KEY);
 
 // 引入暱稱更新
 import updateBioRouter from "./routes/member/update-bio.js";
@@ -58,6 +59,7 @@ const app = express();
 
 // 將 bcrypt 替換為 bcryptjs
 // const bcrypt = require("bcryptjs");
+
 
 
 //註冊樣板引擎
@@ -113,6 +115,7 @@ app.use("/member", updateBioRouter);
 app.use("/member", updateGenderRouter);
 app.use("/member", updateLocationRouter);
 app.use("/member", updatePasswordRouter);
+// console.log("update-password 路由已掛載在 /member/update-password");
 app.use("/member", memberDataRouter);
 app.use("/member", checkAuth);
 
@@ -445,7 +448,7 @@ app.get("/logout", (req, res) => {
 app.get("/jwt01", (req, res) => {
   //自訂的密碼置於dev.env
   const key = process.env.JWT_KEY;
-  console.log({ key });
+  // console.log({ key });
   //要傳送的資料
   const payload = {
     id: 26,
@@ -511,7 +514,7 @@ app.post("/login-jwt", upload.none(), async (req, res) => {
     id: row.member_id,
     email,
     nickname: row.nickname,
-    token,
+    token, // 返回 token
   };
   output.success = true;
   res.json(output);
@@ -551,6 +554,7 @@ app.use((req, res) => {
 
 
 const port = process.env.WEB_PORT || 3002;
+// console.log("JWT_KEY is:", process.env.JWT_KEY);
 
 app.listen(port, () => {
   console.log(`Server 啟動於 ${port}`);

@@ -1,41 +1,49 @@
 import express from "express";
-import memDB from "./mem-db.js"; // 引入資料庫連線
+import jwt from "jsonwebtoken";
+import memDB from "./mem-db.js";
 
 const router = express.Router();
 
+// Secret key for JWT (usually stored in environment variables)
+const JWT_SECRET = process.env.JWT_SECRET || "idlflnlanfladgjqao;gf;w&";
+
 router.put("/update-gender", async (req, res) => {
-  console.log("Received request to update gender"); // 確認是否收到請求
-  try {
-    const { gender } = req.body; // 從請求的資料中取得 gender
-    const memberId = req.session.admin?.id; // 從 session 中取得用戶 ID
-
-    if (!memberId) {
-      // 如果用戶尚未登入
-      return res.status(401).json({ message: "未登入" });
-    }
-
-    // 檢查 gender 是否有效
-    if (!["男", "女", "不透露"].includes(gender)) {
-      return res.status(400).json({ message: "性別格式錯誤" });
-    }
-
-    // 執行 SQL 更新
-    const [result] = await memDB.query(
-      "UPDATE m_member SET m_gender = ? WHERE m_member_id = ?",
-      [gender, memberId]
-    );
-
-    if (result.affectedRows > 0) {
-      req.session.admin.gender = gender;
-
-      res.json({ message: "性別更新成功", gender });
-    } else {
-      res.status(404).json({ message: "用戶不存在" });
-    }
-  } catch (error) {
-    console.error("Error updating gender:", error);
-    res.status(500).json({ message: "更新性別失敗，請重試" });
+  // Extract token from Authorization header
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) {
+    return res.status(401).json({ message: "請先登入" });
   }
+
+  // Verify token format as 'Bearer <token>'
+  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ message: "無效的 token" });
+  }
+
+  // Verify the token
+  jwt.verify(token, JWT_SECRET, async (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: "token 驗證失敗" });
+    }
+
+    // Extract nickname from request body
+    const { gender } = req.body;
+    const memberId = user.id; // Use user.id from the verified token
+
+    try {
+      const sql = "UPDATE m_member SET m_gender = ? WHERE m_member_id = ?";
+      const [result] = await memDB.query(sql, [gender, memberId]);
+
+      if (result.affectedRows === 1) {
+        res.json({ message: "暱稱已更新" });
+      } else {
+        res.status(500).json({ message: "更新失敗，請稍後再試" });
+      }
+    } catch (error) {
+      console.error("Error updating gender:", error);
+      res.status(500).json({ message: "伺服器錯誤" });
+    }
+  });
 });
 
 export default router;
