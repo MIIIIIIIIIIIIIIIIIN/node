@@ -244,7 +244,85 @@ router.post('/projects/create', (req, res) => {
 
 
 
+router.post('/api/updatePlanPeople', async (req, res) => {
+  const { f_plan_id, f_project_list, increment } = req.body;
+  let connection;
 
+  try {
+    // 驗證輸入數據
+    if (!f_plan_id || !f_project_list || !increment) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少必要參數'
+      });
+    }
+
+    // 獲取數據庫連接
+    connection = await db.getConnection();
+
+    // 開始事務
+    await connection.beginTransaction();
+
+    // 查詢當前數據
+    const [currentData] = await connection.execute(
+      'SELECT f_plan_people FROM f_plan WHERE f_plan_id = ? AND f_project_list = ?',
+      [f_plan_id, f_project_list]
+    );
+
+    if (currentData.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({
+        success: false,
+        message: '找不到指定的方案'
+      });
+    }
+
+    // 計算新的購買人數
+    const currentPeople = currentData[0].f_plan_people || 0;  // 加入預設值處理
+    const newPeople = currentPeople + parseInt(increment);
+
+    // 更新數據
+    await connection.execute(
+      'UPDATE f_plan SET f_plan_people = ?, f_plan_current = NOW() WHERE f_plan_id = ? AND f_project_list = ?',
+      [newPeople, f_plan_id, f_project_list]
+    );
+
+    // 提交事務
+    await connection.commit();
+
+    // 回傳成功結果
+    res.json({
+      success: true,
+      message: '成功更新購買人數',
+      data: {
+        f_plan_id,
+        f_project_list,
+        previous_people: currentPeople,
+        new_people: newPeople,
+        increment
+      }
+    });
+
+  } catch (error) {
+    // 如果有錯誤，回滾事務
+    if (connection) {
+      await connection.rollback();
+    }
+
+    console.error('更新購買人數時發生錯誤:', error);
+    res.status(500).json({
+      success: false,
+      message: '更新購買人數時發生錯誤',
+      error: error.message
+    });
+
+  } finally {
+    // 釋放數據庫連接
+    if (connection) {
+      connection.release();
+    }
+  }
+});
 
 
 
@@ -372,6 +450,171 @@ router.get("/message/:project", async (req, res) => {
   res.json({ rows, field });
 });
 
+
+
+
+router.post('/api/orders', async (req, res) => {
+  const { memberId, products } = req.body;
+  let connection;
+
+  try {
+    if (!memberId || !products || products.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少必要參數'
+      });
+    }
+
+    connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    // 計算總金額
+    const totalAmount = products.reduce((sum, item) => 
+      sum + (item.price * item.quantity), 0
+    );
+
+    // 創建訂單主表記錄
+    const [orderResult] = await connection.execute(
+      `INSERT INTO f_order (f_member_id, f_total_amount, f_order_status)
+       VALUES (?, ?, 'pending')`,
+      [memberId, totalAmount]
+    );
+
+    const orderId = orderResult.insertId;
+
+    // 創建訂單明細記錄
+    for (const item of products) {
+      await connection.execute(
+        `INSERT INTO f_order_detail 
+         (f_order_id, f_plan_id, f_project_list, f_quantity, f_price, f_subtotal)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          orderId,
+          item.planId,
+          item.projectList,
+          item.quantity,
+          item.price,
+          item.price * item.quantity
+        ]
+      );
+    }
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      message: '訂單創建成功',
+      data: {
+        orderId,
+        totalAmount
+      }
+    });
+
+  } catch (error) {
+    if (connection) {
+      await connection.rollback();
+    }
+    console.error('創建訂單失敗:', error);
+    res.status(500).json({
+      success: false,
+      message: '創建訂單失敗',
+      error: error.message
+    });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+});
+
+// 獲取訂單列表
+router.get('/api/orders/:memberId', async (req, res) => {
+  try {
+    const { memberId } = req.params;
+    
+    const [orders] = await db.execute(
+      `SELECT 
+        o.f_order_id,
+        o.f_total_amount,
+        o.f_order_status,
+        o.f_created_at,
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'planId', od.f_plan_id,
+            'projectList', od.f_project_list,
+            'quantity', od.f_quantity,
+            'price', od.f_price,
+            'subtotal', od.f_subtotal
+          )
+        ) as details
+       FROM f_order o
+       JOIN f_order_detail od ON o.f_order_id = od.f_order_id
+       WHERE o.f_member_id = ?
+       GROUP BY o.f_order_id
+       ORDER BY o.f_created_at DESC`,
+      [memberId]
+    );
+
+    res.json({
+      success: true,
+      data: orders
+    });
+
+  } catch (error) {
+    console.error('獲取訂單列表失敗:', error);
+    res.status(500).json({
+      success: false,
+      message: '獲取訂單列表失敗',
+      error: error.message
+    });
+  }
+});
+
+// 更新訂單狀態
+router.put('/api/orders/:orderId/status', async (req, res) => {
+  const { orderId } = req.params;
+  const { status } = req.body;
+  let connection;
+
+  try {
+    if (!['pending', 'paid', 'cancelled'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: '無效的訂單狀態'
+      });
+    }
+
+    connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    await connection.execute(
+      'UPDATE f_order SET f_order_status = ? WHERE f_order_id = ?',
+      [status, orderId]
+    );
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      message: '訂單狀態更新成功'
+    });
+
+  } catch (error) {
+    if (connection) {
+      await connection.rollback();
+    }
+    console.error('更新訂單狀態失敗:', error);
+    res.status(500).json({
+      success: false,
+      message: '更新訂單狀態失敗',
+      error: error.message
+    });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+});
 
 
 
