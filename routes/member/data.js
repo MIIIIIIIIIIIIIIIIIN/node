@@ -4,9 +4,9 @@ import memDB from '../member/mem-db.js';
 
 const router = express.Router();
 
-// 定義 `/mem-data/:memberId` 路由，用於獲取特定會員的資料
+// 定義 /mem-data/:memberId 路由，用於獲取特定會員的資料
 router.get("/mem-data/:memberId", async (req, res) => {
-  const { memberId } = req.params; // 獲取 URL 中的 `memberId`
+  const { memberId } = req.params; // 獲取 URL 中的 memberId
 
   try {
     // 從資料庫中查詢會員資料
