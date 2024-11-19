@@ -11,7 +11,8 @@ import upload from "./utils/upload-imgs.js";
 import admin2Router from "./routes/admin2.js";
 import memberRouter from "./routes/member/member.js";
 import memberRouters from "./routes/member/auth.js";
-
+import updateNicknameRouter from './routes/member/update-nickname.js'
+import updateIconRouter from './routes/member/update-icon.js'
 import fundraiserRouter from "./routes/fundraiser.js";
 import loginRouter from "./routes/member/login.js"; // 引入新的 login.js
 import authRouter from "./routes/member/auth.js";
@@ -35,7 +36,6 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
 // 引入暱稱更新
-// import updateNicknameRouter from "./routes/member/update-nickname.js"; 
 // import updateIconRouter from "./routes/member/update-icon.js";
 
 dotenv.config();
