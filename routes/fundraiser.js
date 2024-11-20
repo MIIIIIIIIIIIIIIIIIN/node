@@ -11,7 +11,7 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const frontendPublicPath = path.join('C:', 'Users', 'User', 'Desktop', 'react', 'music-next-mfee58', 'public');
+const frontendPublicPath = path.join('C:', 'Shared', 'finalexam', 'B組', 'B', 'music-next-mfee58', 'public');
 
 // 定義所有需要的路徑
 const paths = {
