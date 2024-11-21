@@ -11,7 +11,7 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const frontendPublicPath = path.join('C:', 'Shared', 'finalexam', 'B組', 'B', 'music-next-mfee58', 'public');
+const frontendPublicPath = path.join('C:', 'Shared', 'finalexam', 'B組', 'B', 'music-node-mfee58', 'public');
 
 // 定義所有需要的路徑
 const paths = {
@@ -226,7 +226,7 @@ router.post('/projects/create', (req, res) => {
           f_project_title,
           f_project_content,
           videoPath,
-          imagePath,
+          'http://localhost:3005'+imagePath,
           headerPath
         ]
       );
@@ -244,7 +244,7 @@ router.post('/projects/create', (req, res) => {
           f_project_title,
           f_project_content,
           video: videoPath,
-          f_project_picture: imagePath,
+          f_project_picture: +imagePath,
           top: headerPath
         }
       });
