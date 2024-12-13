@@ -1,4 +1,8 @@
-/.vscode
+# Ignore dev.env file
+dev.env
 
-
-
+# Ignore .vscode folder
+.vscode/
+# local env files
+.env*.local
+/node_module
