@@ -151,12 +151,12 @@ router.post('/login', async (req, res, next) => {
 //     // 密碼要先經過bcrypt編碼
 //     const passwordHash = await generateHash(updateMember.password)
 //     result = await db.query(
-//       'UPDATE `member` SET `name`=?,`password`=?,`email`=? WHERE `id`=?;',
+//       'UPDATE member SET `name`=?,`password`=?,`email`=? WHERE `id`=?;',
 //       [updateMember.name, passwordHash, updateMember.email, id]
 //     )
 //   } else {
 //     result = await db.query(
-//       'UPDATE `member` SET `name`=?,`email`=? WHERE `id`=?;',
+//       'UPDATE member SET `name`=?,`email`=? WHERE `id`=?;',
 //       [updateMember.name, updateMember.email, id]
 //     )
 //   }

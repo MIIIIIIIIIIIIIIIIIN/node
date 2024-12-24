@@ -488,26 +488,178 @@ router.get("/playlist/:playlistId", async (req, res) => {
   }
 });
 
-//jamendo api for music
-// router.get("/tracks", async (req, res) => {
-//   try {
-//     const response = await axios.get(`${JAMENDO_API_BASE_URL}/tracks`, {
-//       params: {
-//         client_id: JAMENDO_API_KEY,
-//         format: "json",
-//         limit: 10,
-//         order: "popularity_total",
-//       },
-//     });
-//     res.json(response.data);
-//   } catch (error) {
-//     console.error("Error fetching tracks:", error.message);
-//     res.status(500).json({ error: "Failed to fetch tracks from Jamendo" });
-//   }
-// });
+router.get('/favorites/check/:albumUrl/:memberId', async (req, res) => {
+  try {
+    const { albumUrl, memberId } = req.params;
 
-// router.get('/tracks', (req, res) => {
-//   res.send("Tracks endpoint is working!");
-// });
+    // 檢查參數是否存在
+    if (!albumUrl || !memberId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '缺少必要參數'
+      });
+    }
+
+    // 先檢查會員和專案是否存在
+    const [memberExists] = await db.query(
+      'SELECT 1 FROM m_member WHERE m_member_id = ?',
+      [memberId]
+    );
+
+    const [projectExists] = await db.query(
+      'SELECT 1 FROM pp_albums WHERE p_albums_id  = ?',
+      [albumUrl]
+    );
+
+    if (memberExists.length === 0 || projectExists.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: '會員或專案不存在'
+      });
+    }
+
+    const [rows] = await db.query(
+      'SELECT 1 FROM m_favorite WHERE m_member_id = ? AND m_project_id = ?',
+      [memberId, albumUrl]
+    );
+
+    res.json({ 
+      success: true,
+      isFavorite: rows.length > 0 
+    });
+
+  } catch (error) {
+    console.error('檢查收藏狀態失敗:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '伺服器錯誤' 
+    });
+  }
+});
+
+// 新增收藏
+router.post('/favorites/add/:albumUrl/:memberId', async (req, res) => {
+  const conn = await db.getConnection();
+  
+  try {
+    await conn.beginTransaction();
+    
+    const { albumUrl, memberId } = req.params;
+
+    // 檢查參數
+    if (!albumUrl || !memberId) {
+      await conn.rollback();
+      return res.status(400).json({ 
+        success: false, 
+        error: '缺少必要參數' 
+      });
+    }
+
+    // 檢查會員是否存在
+    const [memberExists] = await conn.query(
+      'SELECT 1 FROM m_member WHERE m_member_id = ?',
+      [memberId]
+    );
+
+    if (memberExists.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({ 
+        success: false, 
+        error: '會員不存在' 
+      });
+    }
+
+    // 檢查專案是否存在
+    const [projectExists] = await conn.query(
+      'SELECT 1 FROM pp_albums WHERE p_albums_id  = ?',
+      [albumUrl]
+    );
+
+    if (projectExists.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({ 
+        success: false, 
+        error: '專案不存在' 
+      });
+    }
+
+    // 檢查是否已經收藏
+    const [existing] = await conn.query(
+      'SELECT 1 FROM m_favorite WHERE m_member_id = ? AND m_project_id = ?',
+      [memberId, albumUrl]
+    );
+
+    if (existing.length > 0) {
+      await conn.rollback();
+      return res.status(400).json({ 
+        success: false, 
+        error: '已經收藏過此專案' 
+      });
+    }
+
+    // 新增收藏記錄
+    await conn.query(
+      'INSERT INTO m_favorite (m_member_id, m_project_id, m_create_time) VALUES (?, ?, NOW())',
+      [memberId, albumUrl]
+    );
+
+    await conn.commit();
+
+    res.json({ 
+      success: true,
+      message: '收藏成功' 
+    });
+
+  } catch (error) {
+    await conn.rollback();
+    console.error('新增收藏失敗:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '伺服器錯誤' 
+    });
+  } finally {
+    conn.release();
+  }
+});
+
+// 移除收藏
+router.delete('/favorites/remove/:albumUrl/:memberId', async (req, res) => {
+  try {
+    const { albumUrl, memberId } = req.params;
+
+    // 檢查參數
+    if (!albumUrl || !memberId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '缺少必要參數' 
+      });
+    }
+
+    // 檢查並刪除收藏
+    const [result] = await db.query(
+      'DELETE FROM m_favorite WHERE m_member_id = ? AND m_project_id = ?',
+      [memberId, albumUrl]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: '找不到收藏記錄' 
+      });
+    }
+
+    res.json({ 
+      success: true,
+      message: '成功移除收藏' 
+    });
+
+  } catch (error) {
+    console.error('移除收藏失敗:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: '伺服器錯誤' 
+    });
+  }
+});
 
 export default router;
